@@ -5,18 +5,26 @@ import { FiCreditCard, FiCheckCircle, FiDownload } from 'react-icons/fi'
 import jsPDF from 'jspdf'
 
 const pendingPayments = [
-    { id: 'PAY-2026-01', month: 'January', year: 2026, amount: 500, penalty: 50, total: 550 },
-    { id: 'PAY-2026-02', month: 'February', year: 2026, amount: 500, penalty: 0, total: 500 },
+    { id: 'PAY-2026-01', month: 'January', year: 2026, amount: 1, penalty: 0, total: 1 },
+    { id: 'PAY-2026-02', month: 'February', year: 2026, amount: 1, penalty: 0, total: 1 },
 ]
+
 
 export default function Payments() {
     const { t } = useTranslation()
     const { user } = useAuth()
+    const [paymentsList, setPaymentsList] = useState([
+        { id: 'PAY-2026-01', month: 'January', year: 2026, amount: 1, penalty: 0, total: 1, status: 'unpaid' },
+        { id: 'PAY-2026-02', month: 'February', year: 2026, amount: 1, penalty: 0, total: 1, status: 'unpaid' },
+    ])
     const [processing, setProcessing] = useState(false)
     const [paymentDone, setPaymentDone] = useState(null)
     const [paymentStatus, setPaymentStatus] = useState(null) // 'pending', 'success', 'failed'
 
-    const totalPending = pendingPayments.reduce((s, p) => s + p.total, 0)
+    const totalPending = paymentsList
+        .filter(p => p.status !== 'paid')
+        .reduce((s, p) => s + p.total, 0)
+
 
     const handlePayment = async (payment) => {
         setProcessing(true)
@@ -83,6 +91,10 @@ export default function Payments() {
                             }
                             setPaymentDone(receipt)
                             setPaymentStatus('success')
+                            // Mark the item as paid in the list
+                            setPaymentsList(prev => prev.map(p =>
+                                p.id === payment.id ? { ...p, status: 'paid' } : p
+                            ))
                         } else {
                             alert('Payment verification failed');
                             setPaymentStatus('failed')
@@ -277,7 +289,7 @@ export default function Payments() {
                         </tr>
                     </thead>
                     <tbody>
-                        {pendingPayments.map(p => (
+                        {paymentsList.map(p => (
                             <tr key={p.id}>
                                 <td><strong>{p.id}</strong></td>
                                 <td>{p.month}</td>
@@ -286,9 +298,15 @@ export default function Payments() {
                                 <td>{p.penalty > 0 ? <span style={{ color: 'var(--color-maroon)' }}>₹{p.penalty}</span> : '-'}</td>
                                 <td><strong>₹{p.total}</strong></td>
                                 <td>
-                                    <button className="btn btn-green btn-sm" onClick={() => handlePayment(p)} disabled={processing}>
-                                        {processing && paymentStatus === 'pending' ? 'Processing...' : t('user.payNow')}
-                                    </button>
+                                    {p.status === 'paid' ? (
+                                        <span className="badge badge-success" style={{ color: 'var(--color-green)', fontWeight: 'bold' }}>
+                                            ✓ PAID
+                                        </span>
+                                    ) : (
+                                        <button className="btn btn-green btn-sm" onClick={() => handlePayment(p)} disabled={processing}>
+                                            {processing && paymentStatus === 'pending' ? 'Processing...' : t('user.payNow')}
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
                         ))}

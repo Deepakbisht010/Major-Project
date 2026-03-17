@@ -36,8 +36,11 @@ export const createOrder = async (req, res) => {
             currency: options.currency,
             status: 'pending',
             email: req.body.email,
-            name: req.body.name
+            name: req.body.name,
+            receipt_number: options.receipt,
+            transaction_id: order.id // Placeholder until payment is captured
         });
+
 
         if (error) {
             console.error('Supabase Error:', error.message, error.details);
@@ -78,9 +81,11 @@ export const verifyPayment = async (req, res) => {
                 .update({
                     razorpay_payment_id,
                     razorpay_signature,
-                    status: 'captured',
+                    transaction_id: razorpay_payment_id,
+                    status: 'success', // Changed to match your database schema
                     updated_at: new Date()
                 })
+
                 .eq('razorpay_order_id', razorpay_order_id);
 
             if (error) {
@@ -119,9 +124,10 @@ export const handleWebhook = async (req, res) => {
                 .from('payments')
                 .update({
                     razorpay_payment_id: payload.id,
-                    status: 'captured',
+                    status: 'success',
                     updated_at: new Date()
                 })
+
                 .eq('razorpay_order_id', payload.order_id);
 
             // Also update the taxes table if we have enough info
