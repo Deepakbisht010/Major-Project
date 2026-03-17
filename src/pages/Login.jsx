@@ -4,17 +4,20 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import Captcha from '../components/Captcha'
+import AdminLoginSuccess from '../components/AdminLoginSuccess'
 import { FiUser, FiShield, FiEye, FiEyeOff } from 'react-icons/fi'
 
 export default function Login() {
     const { t } = useTranslation()
     const navigate = useNavigate()
-    const { login, isLocked } = useAuth()
+    const { login, isLocked, user } = useAuth()
     const [tab, setTab] = useState('user')
     const [showPassword, setShowPassword] = useState(false)
     const [captchaVerified, setCaptchaVerified] = useState(false)
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+    const [showAdminSuccess, setShowAdminSuccess] = useState(false)
+    const [loggedInAdmin, setLoggedInAdmin] = useState(null)
 
     const [userForm, setUserForm] = useState({ gstId: '', password: '' })
     const [adminForm, setAdminForm] = useState({ username: '', password: '', passkey: '' })
@@ -30,12 +33,14 @@ export default function Login() {
                 await login({ gstId: userForm.gstId, password: userForm.password }, 'user')
                 navigate('/user')
             } else {
-                await login({
+                const adminData = await login({
                     username: adminForm.username,
                     password: adminForm.password,
                     passkey: adminForm.passkey
                 }, 'admin')
-                navigate('/admin')
+                // Show the animated map success screen before navigating
+                setLoggedInAdmin(adminData)
+                setShowAdminSuccess(true)
             }
         } catch (err) {
             if (err.message === 'locked') {
@@ -46,6 +51,22 @@ export default function Login() {
         } finally {
             setLoading(false)
         }
+    }
+
+    // When animation completes or user skips
+    const handleAnimationComplete = () => {
+        navigate('/admin')
+    }
+
+    // Show full-screen animation on admin success
+    if (showAdminSuccess) {
+        return (
+            <AdminLoginSuccess
+                adminName={loggedInAdmin?.name || adminForm.username || 'Admin'}
+                adminDistrict="kashipur"
+                onComplete={handleAnimationComplete}
+            />
+        )
     }
 
     return (

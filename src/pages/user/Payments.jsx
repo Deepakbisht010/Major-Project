@@ -14,26 +14,110 @@ export default function Payments() {
     const { user } = useAuth()
     const [processing, setProcessing] = useState(false)
     const [paymentDone, setPaymentDone] = useState(null)
+    const [paymentStatus, setPaymentStatus] = useState(null) // 'pending', 'success', 'failed'
 
     const totalPending = pendingPayments.reduce((s, p) => s + p.total, 0)
 
-    const handlePayment = (payment) => {
+    const handlePayment = async (payment) => {
         setProcessing(true)
-        // Simulate Razorpay payment
-        setTimeout(() => {
-            const receipt = {
-                receiptNo: 'RCP-' + Date.now(),
-                transactionId: 'TXN-' + Math.random().toString(36).substr(2, 12).toUpperCase(),
-                amount: payment.total,
-                month: payment.month,
-                year: payment.year,
-                paidAt: new Date().toLocaleString('en-IN'),
-                gstId: user?.gstId || '05AAAPZ2694Q1ZN',
-                userName: user?.username || 'Rajesh Kumar'
+        setPaymentStatus('pending')
+
+        try {
+            // 1. Create Order in Backend
+            const orderResponse = await fetch(`${import.meta.env.VITE_API_URL}/payments/create-order`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: payment.total,
+                    currency: 'INR',
+                    userId: user?.id,
+                    email: user?.email,
+                    name: user?.username || 'User',
+                    notes: {
+                        month: payment.month,
+                        year: payment.year,
+                        taxId: payment.id
+                    }
+                })
+            });
+
+            const orderData = await orderResponse.json();
+
+            if (!orderResponse.ok) {
+                throw new Error(orderData.message || 'Failed to create order');
             }
-            setPaymentDone(receipt)
+
+            // 2. Open Razorpay Checkout
+            const options = {
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+                amount: orderData.amount,
+                currency: orderData.currency,
+                name: 'E-Pay',
+                description: 'Payment Transaction',
+                order_id: orderData.id,
+                handler: async function (response) {
+                    // 3. Verify Payment in Backend
+                    try {
+                        const verifyResponse = await fetch(`${import.meta.env.VITE_API_URL}/payments/verify-payment`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                        });
+
+                        const verifyData = await verifyResponse.json();
+
+                        if (verifyData.success) {
+                            const receipt = {
+                                receiptNo: 'RCP-' + Date.now(),
+                                transactionId: response.razorpay_payment_id,
+                                amount: payment.total,
+                                month: payment.month,
+                                year: payment.year,
+                                paidAt: new Date().toLocaleString('en-IN'),
+                                gstId: user?.gstId || 'N/A',
+                                userName: user?.username || 'User'
+                            }
+                            setPaymentDone(receipt)
+                            setPaymentStatus('success')
+                        } else {
+                            alert('Payment verification failed');
+                            setPaymentStatus('failed')
+                        }
+                    } catch (err) {
+                        console.error('Verification Error:', err);
+                        setPaymentStatus('failed')
+                        alert('Error verifying payment');
+                    } finally {
+                        setProcessing(false)
+                    }
+                },
+                prefill: {
+                    name: user?.username,
+                    email: user?.email,
+                },
+                theme: {
+                    color: '#821D30',
+                },
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                setPaymentStatus('failed')
+                alert(`Payment failed: ${response.error.description}`)
+                setProcessing(false)
+            });
+            rzp.open();
+
+        } catch (error) {
+            console.error('Payment Error:', error);
+            alert(error.message || 'Payment failed to initiate');
+            setPaymentStatus('failed')
             setProcessing(false)
-        }, 2000)
+        }
     }
 
     const downloadReceipt = () => {
@@ -125,7 +209,10 @@ export default function Payments() {
                             <button className="btn btn-maroon" style={{ flex: 1 }} onClick={downloadReceipt}>
                                 <FiDownload size={16} /> {t('user.downloadReceipt')}
                             </button>
-                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setPaymentDone(null)}>
+                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => {
+                                setPaymentDone(null);
+                                setPaymentStatus(null);
+                            }}>
                                 Back to Payments
                             </button>
                         </div>
@@ -137,9 +224,31 @@ export default function Payments() {
 
     return (
         <div>
+            {paymentStatus === 'failed' && (
+                <div className="alert alert-error" style={{ marginBottom: 20 }}>
+                    ❌ Payment Failed. Please try again.
+                </div>
+            )}
+
             <div className="page-header">
-                <h2>{t('user.payments')}</h2>
-                <p>View pending dues and make secure online payments</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <h2>{t('user.payments')}</h2>
+                        <p>View pending dues and make secure online payments</p>
+                    </div>
+                    {paymentStatus && (
+                        <div className={`status-badge status-${paymentStatus}`} style={{
+                            padding: '8px 16px',
+                            borderRadius: '20px',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            backgroundColor: paymentStatus === 'success' ? '#dcfce7' : paymentStatus === 'failed' ? '#fee2e2' : '#fef9c3',
+                            color: paymentStatus === 'success' ? '#166534' : paymentStatus === 'failed' ? '#991b1b' : '#854d0e'
+                        }}>
+                            {paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1)}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Pending Amount Card */}
@@ -178,7 +287,7 @@ export default function Payments() {
                                 <td><strong>₹{p.total}</strong></td>
                                 <td>
                                     <button className="btn btn-green btn-sm" onClick={() => handlePayment(p)} disabled={processing}>
-                                        {processing ? '...' : t('user.payNow')}
+                                        {processing && paymentStatus === 'pending' ? 'Processing...' : t('user.payNow')}
                                     </button>
                                 </td>
                             </tr>
