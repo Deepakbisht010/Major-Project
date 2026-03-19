@@ -6,26 +6,23 @@ import {
     PieChart, Pie, Cell, LineChart, Line, Legend
 } from 'recharts'
 import api from '../../lib/api'
+import { useAuth } from '../../context/AuthContext'
+import { supabase } from '../../lib/supabase'
 
-const blockData = [
+
+
+// Placeholder fallback data
+const fallbackBlockData = [
     { name: 'Almora', paid: 45000, unpaid: 12000 },
     { name: 'Hawalbagh', paid: 32000, unpaid: 8000 },
-    { name: 'Salt', paid: 28000, unpaid: 15000 },
-    { name: 'Dwarahat', paid: 22000, unpaid: 6000 },
-    { name: 'Bhaisiyachana', paid: 18000, unpaid: 9000 },
-    { name: 'Lamgara', paid: 15000, unpaid: 5000 },
 ]
 
-const shopTypeData = [
-    { name: 'General Store', value: 35, color: '#E8863A' },
+const fallbackShopTypeData = [
+    { name: 'General', value: 35, color: '#E8863A' },
     { name: 'Medical', value: 20, color: '#5B9A59' },
-    { name: 'Clothing', value: 15, color: '#821D30' },
-    { name: 'Electronics', value: 12, color: '#4285F4' },
-    { name: 'Restaurant', value: 10, color: '#D4712A' },
-    { name: 'Other', value: 8, color: '#8A8A8A' },
 ]
 
-const monthlyData = [
+const fallbackMonthlyData = [
     { month: 'Sep', amount: 120000 },
     { month: 'Oct', amount: 135000 },
     { month: 'Nov', amount: 128000 },
@@ -34,49 +31,90 @@ const monthlyData = [
     { month: 'Feb', amount: 98000 },
 ]
 
-const recentPayments = [
+const fallbackRecentPayments = [
     { user: 'Rajesh Kumar', gst: '05AAAPZ2694Q1ZN', amount: 550, date: '27 Feb 2026', status: 'paid' },
     { user: 'Priya Devi', gst: '05BBBPZ3584Q2YM', amount: 500, date: '26 Feb 2026', status: 'paid' },
     { user: 'Mohan Lal', gst: '05CCCPZ4474Q3XN', amount: 500, date: '26 Feb 2026', status: 'paid' },
-    { user: 'Kamla Bisht', gst: '05DDDPZ5364Q4WO', amount: 600, date: '25 Feb 2026', status: 'paid' },
-    { user: 'Suresh Rawat', gst: '05EEEPZ6254Q5VP', amount: 500, date: '25 Feb 2026', status: 'paid' },
 ]
+
+
+
+
+
 
 export default function Dashboard() {
     const { t } = useTranslation()
+    const { user } = useAuth()
     const [loading, setLoading] = useState(true)
+
     const [metrics, setMetrics] = useState({
         totalUsers: 0,
         totalTaxesCollected: 0,
-        activeSessions: 0
+        paidShops: 0,
+        unpaidShops: 0,
+        recentPayments: [],
+        blockData: [],
+        shopTypeData: [],
+        monthlyData: []
     })
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                // Fetch high-level metrics from the API
-                const response = await api.get('/admin/metrics');
-                if (response.data.success) {
-                    setMetrics(response.data.metrics);
-                }
-            } catch (error) {
-                console.error("Failed to fetch dashboard metrics");
-            } finally {
-                setLoading(false);
+    const fetchDashboardData = async () => {
+        try {
+            const response = await api.get('/admin/metrics');
+            if (response.data.success) {
+                setMetrics(prev => ({ ...prev, ...response.data.metrics }));
             }
-        };
+        } catch (error) {
+            console.error("Failed to fetch dashboard metrics");
+        } finally {
+            setLoading(false);
+        }
+    };
 
+
+    useEffect(() => {
         fetchDashboardData();
+
+        // REAL-TIME: Re-fetch metrics on any user or payment activity
+        const channel = supabase
+            .channel('admin-dashboard-realtime')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, () => {
+                console.log("[Realtime] User added, refreshing dashboard...");
+                fetchDashboardData();
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'payments' }, () => {
+                console.log("[Realtime] Payment detected, refreshing dashboard...");
+                fetchDashboardData();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
+
 
     if (loading) return <div style={{ padding: '2rem' }}>Loading dashboard data...</div>;
 
+    const displayRecentPayments = (metrics.recentPayments && metrics.recentPayments.length > 0)
+        ? metrics.recentPayments
+        : fallbackRecentPayments;
+
+
     return (
         <div>
-            <div className="page-header">
-                <h2>{t('admin.dashboard')}</h2>
-                <p>Real-time overview of tax collection across the district</p>
+            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <h2>{t('admin.dashboard')}</h2>
+                    <p>Real-time overview of tax collection across {(user?.district === 'all' || user?.district === 'admin') ? 'the whole state' : `the ${user?.district} district`}</p>
+                </div>
+                {(user?.district === 'all' || user?.district === 'admin') && (
+                    <span className="badge badge-maroon" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                        🚩 SUPER ADMIN ACCESS
+                    </span>
+                )}
             </div>
+
 
             {/* Stat Cards */}
             <div className="grid-4" style={{ marginBottom: 28 }}>
@@ -94,7 +132,7 @@ export default function Dashboard() {
                         <FiCheckCircle size={22} />
                     </div>
                     <div className="stat-info">
-                        <h3>892</h3>
+                        <h3>{metrics.paidShops || 0}</h3>
                         <p>{t('admin.paidShops')}</p>
                     </div>
                 </div>
@@ -103,10 +141,11 @@ export default function Dashboard() {
                         <FiXCircle size={22} />
                     </div>
                     <div className="stat-info">
-                        <h3>355</h3>
+                        <h3>{metrics.unpaidShops || 0}</h3>
                         <p>{t('admin.unpaidShops')}</p>
                     </div>
                 </div>
+
                 <div className="stat-card">
                     <div className="stat-icon" style={{ background: 'rgba(232,134,58,0.15)', color: 'var(--color-saffron)' }}>
                         <FiDollarSign size={22} />
@@ -118,18 +157,19 @@ export default function Dashboard() {
                 </div>
             </div>
 
+
             {/* Charts Row */}
             <div className="grid-2" style={{ marginBottom: 28 }}>
                 <div className="chart-card">
                     <h4>{t('admin.blockWise')}</h4>
                     <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={blockData}>
+                        <BarChart data={metrics.blockData || []}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D5" />
                             <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                             <YAxis tick={{ fontSize: 11 }} />
                             <Tooltip
                                 contentStyle={{ borderRadius: 8, border: '1px solid #E5E0D5' }}
-                                formatter={(value) => [`₹${value.toLocaleString()}`, '']}
+                                formatter={(value) => [value, 'Shops']}
                             />
                             <Legend />
                             <Bar dataKey="paid" fill="#5B9A59" name="Paid" radius={[4, 4, 0, 0]} />
@@ -139,11 +179,11 @@ export default function Dashboard() {
                 </div>
 
                 <div className="chart-card">
-                    <h4>{t('admin.shopTypeWise')}</h4>
+                    <h4>{t('admin.shopTypeWise')} (%)</h4>
                     <ResponsiveContainer width="100%" height={280}>
                         <PieChart>
                             <Pie
-                                data={shopTypeData}
+                                data={metrics.shopTypeData && metrics.shopTypeData.length > 0 ? metrics.shopTypeData : [{ name: 'None', value: 100, color: '#eee' }]}
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={60}
@@ -152,7 +192,7 @@ export default function Dashboard() {
                                 dataKey="value"
                                 label={({ name, value }) => `${name} (${value}%)`}
                             >
-                                {shopTypeData.map((entry, i) => (
+                                {(metrics.shopTypeData || []).map((entry, i) => (
                                     <Cell key={i} fill={entry.color} />
                                 ))}
                             </Pie>
@@ -162,11 +202,12 @@ export default function Dashboard() {
                 </div>
             </div>
 
+
             <div className="grid-2" style={{ marginBottom: 28 }}>
                 <div className="chart-card">
                     <h4>{t('admin.monthlyGrowth')}</h4>
                     <ResponsiveContainer width="100%" height={260}>
-                        <LineChart data={monthlyData}>
+                        <LineChart data={metrics.monthlyData && metrics.monthlyData.length > 0 ? metrics.monthlyData : fallbackMonthlyData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D5" />
                             <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                             <YAxis tick={{ fontSize: 11 }} />
@@ -189,7 +230,7 @@ export default function Dashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {recentPayments.map((p, i) => (
+                                {displayRecentPayments.map((p, i) => (
                                     <tr key={i}>
                                         <td>
                                             <div>

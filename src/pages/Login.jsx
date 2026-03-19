@@ -63,7 +63,7 @@ export default function Login() {
         return (
             <AdminLoginSuccess
                 adminName={loggedInAdmin?.name || adminForm.username || 'Admin'}
-                adminDistrict="kashipur"
+                adminDistrict={loggedInAdmin?.district || 'kashipur'}
                 onComplete={handleAnimationComplete}
             />
         )

@@ -19,6 +19,9 @@ const DISTRICTS = {
     haridwar: { name: 'Haridwar', district: 'Haridwar', coords: [29.9457, 78.1642], zoom: 12, block: 'Roorkee Block' },
     nainital: { name: 'Nainital', district: 'Nainital', coords: [29.3919, 79.4542], zoom: 11, block: 'Bhimtal Block' },
     almora: { name: 'Almora', district: 'Almora', coords: [29.5972, 79.6593], zoom: 12, block: 'Hawalbagh Block' },
+    chamoli: { name: 'Chamoli', district: 'Chamoli', coords: [30.40, 79.33], zoom: 11, block: 'Joshimath Block' },
+    pithoragarh: { name: 'Pithoragarh', district: 'Pithoragarh', coords: [29.58, 80.21], zoom: 12, block: 'Munsiari Block' },
+    haldwani: { name: 'Haldwani', district: 'Nainital', coords: [29.2189, 79.5130], zoom: 13, block: 'Haldwani Block' },
 }
 
 // Timeline (ms) — faster, tighter 2–3 s feel

@@ -10,9 +10,19 @@ const businessTypes = ['general', 'medical', 'clothing', 'electronics', 'restaur
 const districts = ['almora', 'bageshwar', 'chamoli', 'champawat', 'dehradun', 'haridwar', 'nainital', 'pauri', 'pithoragarh', 'rudraprayag', 'tehri', 'udhamsingh', 'uttarkashi']
 
 const blocks = {
-    almora: ['Almora', 'Bhaisiyachana', 'Dwarahat', 'Hawalbagh', 'Lamgara', 'Salt', 'Syaldey', 'Tarikhet'],
+    almora: ['Almora', 'Bhaisiyachana', 'Chaukhutiya', 'Dhauladevi', 'Dwarahat', 'Hawalbagh', 'Lamgara', 'Salt', 'Syaldey', 'Tarikhet', 'Takula'],
+    bageshwar: ['Bageshwar', 'Garur', 'Kapkot'],
+    chamoli: ['Dasholi', 'Dewal', 'Gairsain', 'Ghat', 'Joshimath', 'Karanprayag', 'Narainbagar', 'Pokhari', 'Tharali'],
+    champawat: ['Barakot', 'Champawat', 'Lohaghat', 'Pati'],
     dehradun: ['Chakrata', 'Doiwala', 'Kalsi', 'Raipur', 'Sahaspur', 'Vikasnagar'],
-    nainital: ['Bhimtal', 'Haldwani', 'Kotabagh', 'Okhalkanda', 'Ramgarh'],
+    haridwar: ['Bahadarabad', 'Bhagwanpur', 'Khanpur', 'Laksar', 'Narsan', 'Roorkee'],
+    nainital: ['Betalghat', 'Bhimtal', 'Dhari', 'Haldwani', 'Kotabagh', 'Okhalkanda', 'Ramgarh', 'Ramnagar'],
+    pauri: ['Bironkhal', 'Dwarikhal', 'Dugadda', 'Ekeshwar', 'Jaiharikhal', 'Kaljikhal', 'Khirsu', 'Kot', 'Lansdowne', 'Pabo', 'Pauri', 'Pokhra', 'Rikhnikhal', 'Thalisain', 'Yamkeshwar'],
+    pithoragarh: ['Berinag', 'Dharchula', 'Didihat', 'Kanalichina', 'Munsiari', 'Pithoragarh', 'Gangolihat', 'Bin'],
+    rudraprayag: ['Augustmuni', 'Jakholi', 'Ukhimath'],
+    tehri: ['Bhilangna', 'Chamba', 'Devprayag', 'Jakhnidhar', 'Jaunpur', 'Narendranagar', 'Pratapnagar', 'Thauldhar', 'Tehri'],
+    udhamsingh: ['Gadarpur', 'Jaspur', 'Kashipur', 'Khatima', 'Kichha', 'Rudrapur', 'Sitarganj'],
+    uttarkashi: ['Bhatwari', 'Chinyalisaur', 'Dunda', 'Mori', 'Naugaon', 'Purola']
 }
 
 export default function Register() {
@@ -191,13 +201,15 @@ export default function Register() {
                             <div className="form-group">
                                 <label>{t('auth.block')} *</label>
                                 <select className="form-control" required value={form.block}
-                                    onChange={e => updateForm('block', e.target.value)}>
+                                    onChange={e => updateForm('block', e.target.value)}
+                                    disabled={!form.district}>
                                     <option value="">--</option>
-                                    {(blocks[form.district] || ['Block 1', 'Block 2', 'Block 3']).map(b => (
+                                    {(blocks[form.district] || []).map(b => (
                                         <option key={b} value={b}>{b}</option>
                                     ))}
                                 </select>
                             </div>
+
                         </div>
 
                         <div className="form-group">

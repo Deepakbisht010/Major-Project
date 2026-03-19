@@ -1,21 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiDownload } from 'react-icons/fi'
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     LineChart, Line, Legend
 } from 'recharts'
+import api from '../../lib/api'
 
 const yearlyData = [
     { year: '2023', amount: 650000 },
     { year: '2024', amount: 820000 },
     { year: '2025', amount: 950000 },
-    { year: '2026', amount: 280000 },
+    { year: '2026', amount: 0 },
 ]
 
 const monthlyBreakdown = [
-    { month: 'Jan', '2025': 85000, '2026': 95000 },
-    { month: 'Feb', '2025': 78000, '2026': 65000 },
+    { month: 'Jan', '2025': 85000, '2026': 0 },
+    { month: 'Feb', '2025': 78000, '2026': 0 },
     { month: 'Mar', '2025': 92000, '2026': 0 },
     { month: 'Apr', '2025': 88000, '2026': 0 },
     { month: 'May', '2025': 76000, '2026': 0 },
@@ -47,9 +48,97 @@ const shopTypeAnalytics = [
     { type: 'Stationery', shops: 43, collected: 21500, pending: 5000 },
 ]
 
+
+
 export default function TaxAnalytics() {
     const { t } = useTranslation()
     const [activeTab, setActiveTab] = useState('yearly')
+    const [loading, setLoading] = useState(true)
+    const [data, setData] = useState({
+        yearly: [...yearlyData],
+        monthly: [...monthlyBreakdown],
+        blockWise: [...blockAnalytics],
+        shopType: [...shopTypeAnalytics]
+    })
+
+    useEffect(() => {
+        const fetchAnalytics = async () => {
+            try {
+                const response = await api.get('/admin/analytics');
+                if (response.data.success) {
+                    const real = response.data.data;
+
+                    // MERGE REAL DATA WITH MOCK DATA
+                    setData(prev => {
+                        const merged = { ...prev };
+
+                        // 1. Merge Yearly
+                        real.yearly.forEach(ry => {
+                            const idx = merged.yearly.findIndex(my => my.year === ry.year);
+                            if (idx > -1) merged.yearly[idx].amount += ry.amount;
+                            else merged.yearly.push(ry);
+                        });
+
+                        // 2. Merge Monthly Growth
+                        if (real.monthly) {
+                            real.monthly.forEach(rm => {
+                                const idx = merged.monthly.findIndex(mm => mm.month === rm.month);
+                                if (idx > -1) {
+                                    // Combine years (e.g. 2025, 2026)
+                                    Object.keys(rm).forEach(key => {
+                                        if (key !== 'month') {
+                                            merged.monthly[idx][key] = (merged.monthly[idx][key] || 0) + rm[key];
+                                        }
+                                    });
+                                }
+                            });
+                        }
+
+                        // 3. Merge Block-wise
+
+                        real.blockWise.forEach(rb => {
+                            const idx = merged.blockWise.findIndex(mb => mb.block.toLowerCase() === rb.block.toLowerCase());
+                            if (idx > -1) {
+                                merged.blockWise[idx].paid += rb.paid;
+                                merged.blockWise[idx].pending += rb.pending;
+                                merged.blockWise[idx].total += rb.total;
+                            } else {
+                                merged.blockWise.push(rb);
+                            }
+                        });
+
+                        // 3. Merge Shop-type
+                        real.shopType.forEach(rs => {
+                            const idx = merged.shopType.findIndex(ms => ms.type.toLowerCase().includes(rs.type.toLowerCase()));
+                            if (idx > -1) {
+                                merged.shopType[idx].shops += rs.shops;
+                                merged.shopType[idx].collected += rs.collected;
+                                merged.shopType[idx].pending += rs.pending;
+                            } else {
+                                merged.shopType.push({
+                                    type: rs.type.charAt(0).toUpperCase() + rs.type.slice(1),
+                                    shops: rs.shops,
+                                    collected: rs.collected,
+                                    pending: rs.pending
+                                });
+                            }
+                        });
+
+                        return merged;
+                    });
+                }
+            } catch (error) {
+                console.error("Failed to fetch tax analytics");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAnalytics();
+    }, []);
+
+
+    if (loading) return <div style={{ padding: '2rem' }}>Loading analytics data...</div>;
 
     return (
         <div>
@@ -80,7 +169,7 @@ export default function TaxAnalytics() {
                     <div className="chart-card">
                         <h4>Year-wise Tax Collection</h4>
                         <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={yearlyData}>
+                            <BarChart data={data.yearly}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D5" />
                                 <XAxis dataKey="year" />
                                 <YAxis tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`} />
@@ -95,14 +184,14 @@ export default function TaxAnalytics() {
                             <table className="data-table">
                                 <thead><tr><th>Year</th><th>Collection</th><th>Growth</th></tr></thead>
                                 <tbody>
-                                    {yearlyData.map((d, i) => (
+                                    {data.yearly.map((d, i) => (
                                         <tr key={d.year}>
                                             <td><strong>{d.year}</strong></td>
                                             <td>₹{d.amount.toLocaleString()}</td>
                                             <td>
-                                                {i > 0 ? (
-                                                    <span style={{ color: d.amount > yearlyData[i - 1].amount ? 'var(--color-green)' : 'var(--color-maroon)' }}>
-                                                        {d.amount > yearlyData[i - 1].amount ? '↑' : '↓'} {Math.abs(((d.amount - yearlyData[i - 1].amount) / yearlyData[i - 1].amount * 100)).toFixed(1)}%
+                                                {i > 0 && data.yearly[i - 1].amount > 0 ? (
+                                                    <span style={{ color: d.amount > data.yearly[i - 1].amount ? 'var(--color-green)' : 'var(--color-maroon)' }}>
+                                                        {d.amount > data.yearly[i - 1].amount ? '↑' : '↓'} {Math.abs(((d.amount - data.yearly[i - 1].amount) / data.yearly[i - 1].amount * 100)).toFixed(1)}%
                                                     </span>
                                                 ) : '-'}
                                             </td>
@@ -120,7 +209,7 @@ export default function TaxAnalytics() {
                 <div className="chart-card">
                     <h4>Month-wise Comparison (2025 vs 2026)</h4>
                     <ResponsiveContainer width="100%" height={350}>
-                        <LineChart data={monthlyBreakdown}>
+                        <LineChart data={data.monthly}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D5" />
                             <XAxis dataKey="month" />
                             <YAxis tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`} />
@@ -139,7 +228,7 @@ export default function TaxAnalytics() {
                     <div className="chart-card" style={{ marginBottom: 24 }}>
                         <h4>Block-wise Collection Overview</h4>
                         <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={blockAnalytics}>
+                            <BarChart data={data.blockWise}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D5" />
                                 <XAxis dataKey="block" />
                                 <YAxis tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`} />
@@ -154,7 +243,7 @@ export default function TaxAnalytics() {
                         <table className="data-table">
                             <thead><tr><th>Block</th><th>Total</th><th>Paid</th><th>Pending</th><th>Collection %</th></tr></thead>
                             <tbody>
-                                {blockAnalytics.map(b => (
+                                {data.blockWise.map(b => (
                                     <tr key={b.block}>
                                         <td><strong>{b.block}</strong></td>
                                         <td>₹{b.total.toLocaleString()}</td>
@@ -163,9 +252,9 @@ export default function TaxAnalytics() {
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                 <div style={{ flex: 1, height: 6, background: '#eee', borderRadius: 3 }}>
-                                                    <div style={{ width: `${(b.paid / b.total * 100)}%`, height: '100%', background: 'var(--color-green)', borderRadius: 3 }}></div>
+                                                    <div style={{ width: `${(b.paid / (b.total || 1) * 100)}%`, height: '100%', background: 'var(--color-green)', borderRadius: 3 }}></div>
                                                 </div>
-                                                <span style={{ fontSize: '0.82rem' }}>{(b.paid / b.total * 100).toFixed(0)}%</span>
+                                                <span style={{ fontSize: '0.82rem' }}>{(b.paid / (b.total || 1) * 100).toFixed(0)}%</span>
                                             </div>
                                         </td>
                                     </tr>
@@ -182,13 +271,13 @@ export default function TaxAnalytics() {
                     <table className="data-table">
                         <thead><tr><th>Shop Type</th><th>Total Shops</th><th>Collected</th><th>Pending</th><th>Avg/Shop</th></tr></thead>
                         <tbody>
-                            {shopTypeAnalytics.map(s => (
+                            {data.shopType.map(s => (
                                 <tr key={s.type}>
                                     <td><strong>{s.type}</strong></td>
                                     <td>{s.shops}</td>
                                     <td style={{ color: 'var(--color-green)' }}>₹{s.collected.toLocaleString()}</td>
                                     <td style={{ color: 'var(--color-maroon)' }}>₹{s.pending.toLocaleString()}</td>
-                                    <td>₹{Math.round(s.collected / s.shops).toLocaleString()}</td>
+                                    <td>₹{Math.round(s.collected / (s.shops || 1)).toLocaleString()}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -197,4 +286,5 @@ export default function TaxAnalytics() {
             )}
         </div>
     )
+
 }

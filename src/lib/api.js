@@ -14,11 +14,14 @@ api.interceptors.request.use((config) => {
   if (userStr) {
     try {
       const user = JSON.parse(userStr);
-      // Assuming you store the Supabase session token inside your user object
+      // Log for debugging (requested in Step 6)
       if (user.token) {
+        console.log(`[API Request] Calling ${config.url} with token: ${user.token.substring(0, 10)}...`);
         config.headers.Authorization = `Bearer ${user.token}`;
+      } else {
+        console.warn(`[API Request] Calling ${config.url} but NO token found in user object.`);
       }
-    } catch(e) {
+    } catch (e) {
       console.error('Failed to parse user from local storage');
     }
   }
@@ -26,5 +29,22 @@ api.interceptors.request.use((config) => {
 }, (error) => {
   return Promise.reject(error);
 });
+
+// Add a response interceptor to handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.error('[API Response] 401 Unauthorized detected. Redirecting to login...');
+      // Clear expired token/session
+      localStorage.removeItem('etaxpay-user');
+      // Redirect to login (avoiding crash as requested)
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

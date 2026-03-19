@@ -15,7 +15,7 @@ import sumitImg from '../assets/sumit.jpeg'
 import rajaImg from '../assets/raja.jpeg'
 import manishImg from '../assets/manish.jpeg'
 import bhaveshImg from '../assets/bhavesh.jpeg'
-import deepakImg from '../assets/deepak.jpeg'
+const deepakImg = '/deepak.jpg'
 import sahilImg from '../assets/sahil.jpeg'
 import lalitImg from '../assets/lalit.jpeg'
 import gauravImg from '../assets/gaurav.jpeg'
@@ -31,14 +31,14 @@ const aboutFeatures = [
 ]
 
 const teamMembers = [
-    { name: 'Sumit Bhandari', role: 'Project Lead',  tech: 'React, Supabase' , img:sumitImg},
-    { name: 'Raja Rautela', role: 'Frontend Developer', tech: 'React, CSS' ,img:rajaImg },
-    { name: 'Manish Paliwal', role: 'Backend Developer', tech: 'Node.js, PostgreSQL',img:manishImg },
-    { name: 'Bhavesh Bisht', role: 'UI/UX Designer', tech: 'Figma, CSS' ,img:bhaveshImg },
-    { name: 'Deepak Bisht', role: 'Database Architect', tech: 'Supabase, SQL' ,img:deepakImg },
-    { name: 'Sahil Chand', role: 'Testing Lead',tech: 'Jest, Cypress' ,img:sahilImg },
-    { name: 'Lalit Singh', role: 'DevOps Engineer', tech: 'Docker, CI/CD' ,img:lalitImg },
-    { name: 'Gaurav Bisht', role: 'Documentation', tech: 'Technical Writing' ,img:gauravImg },
+    { name: 'Sumit Bhandari', role: 'Project Lead', tech: 'React, Supabase', img: sumitImg },
+    { name: 'Raja Rautela', role: 'Frontend Developer', tech: 'React, CSS', img: rajaImg },
+    { name: 'Manish Paliwal', role: 'Backend Developer', tech: 'Node.js, PostgreSQL', img: manishImg },
+    { name: 'Bhavesh Bisht', role: 'UI/UX Designer', tech: 'Figma, CSS', img: bhaveshImg },
+    { name: 'Deepak Bisht', role: 'Database Architect', tech: 'Supabase, SQL', img: deepakImg },
+    { name: 'Sahil Chand', role: 'Testing Lead', tech: 'Jest, Cypress', img: sahilImg },
+    { name: 'Lalit Singh', role: 'DevOps Engineer', tech: 'Docker, CI/CD', img: lalitImg },
+    { name: 'Gaurav Bisht', role: 'Documentation', tech: 'Technical Writing', img: gauravImg },
 ]
 
 const complaintReasons = [

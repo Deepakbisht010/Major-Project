@@ -28,17 +28,8 @@ export function AuthProvider({ children }) {
             throw new Error('Account locked due to too many failed attempts.')
         }
 
-        // --- FRONTEND BACKEND CALL FOR USER --- //
-        // We removed the mock frontend bypass so it will hit the backend route.
-
-        if (type === 'admin') {
-            const demoAdmin = { id: 2, role: 'super_admin', name: 'Admin User', username: credentials.username || 'admin', email: 'admin@example.com', department: 'Central Board' };
-            setUser(demoAdmin);
-            localStorage.setItem('etaxpay-user', JSON.stringify(demoAdmin));
-            setLoginAttempts(0);
-            return demoAdmin;
-        }
-        // ---------------------------------------- //
+        // --- FRONTEND BACKEND CALL FOR ADMIN / USER --- //
+        // This will now hit the backend route for both types to get real district/profile data.
 
         try {
             const endpoint = type === 'user' ? '/auth/login/user' : '/auth/login/admin';

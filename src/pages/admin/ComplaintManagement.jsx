@@ -1,14 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiEye, FiCheck } from 'react-icons/fi'
-
-const complaintsData = [
-    { id: 1, user: 'Rajesh Kumar', shop: 'Kumar General Store', location: 'Mall Road, Almora', reason: 'Wrong Tax Assessment', description: 'I was charged ₹800 instead of ₹500 for my general store category.', date: '2026-02-20', status: 'pending', photo: null },
-    { id: 2, user: 'Priya Devi', shop: 'Priya Medical', location: 'Lala Bazar, Almora', reason: 'No Receipt Given', description: 'Tax collector visited on Feb 15 and collected tax but did not provide any receipt.', date: '2026-02-18', status: 'verified', photo: null },
-    { id: 3, user: 'Mohan Lal', shop: 'Fashion Point', location: 'Bag Market, Almora', reason: 'Overcharging', description: 'Penalty was applied even though I paid before due date. Need review.', date: '2026-02-15', status: 'actionTaken', photo: null },
-    { id: 4, user: 'Suresh Rawat', shop: 'Mountain Cafe', location: 'Near Bus Stand, Almora', reason: 'Harassment by Officials', description: 'Tax officials are pressuring for cash payment and refusing online payment receipt.', date: '2026-02-12', status: 'pending', photo: null },
-    { id: 5, user: 'Kiran Negi', shop: 'Negi Electronics', location: 'Dharanaula, Almora', reason: 'Corruption in Collection', description: 'Middleman is collecting tax on behalf of Panchayat without authorization.', date: '2026-02-10', status: 'verified', photo: null },
-]
+import api from '../../lib/api'
 
 const statusColors = {
     pending: { bg: 'rgba(232,134,58,0.15)', color: 'var(--color-saffron)' },
@@ -18,9 +11,69 @@ const statusColors = {
 
 export default function ComplaintManagement() {
     const { t } = useTranslation()
-    const [complaints, setComplaints] = useState(complaintsData)
+    const [complaints, setComplaints] = useState([])
+    const [loading, setLoading] = useState(true)
     const [selectedComplaint, setSelectedComplaint] = useState(null)
     const [statusFilter, setStatusFilter] = useState('')
+
+    useEffect(() => {
+        const fetchAll = async () => {
+            try {
+                // Fetch real users and complaints
+                const [userRes, compRes] = await Promise.all([
+                    api.get('/admin/users'),
+                    api.get('/admin/complaints')
+                ]);
+
+                const realUsers = userRes.data.users || [];
+                const realComplaints = (compRes.data.complaints || []).map(c => ({
+                    id: c.id,
+                    user: c.users?.username || 'Unknown',
+                    shop: c.shop_name || 'Generic Shop',
+                    location: c.location || `${c.users?.block}, ${c.users?.district}`,
+                    reason: c.reason,
+                    description: c.description,
+                    date: c.created_at,
+                    status: c.status === 'action_taken' ? 'actionTaken' : c.status,
+                    photo: c.photo_url
+                }));
+
+                // If real complaints are few, mix in some dummy ones but with REAL user names
+                const merged = [...realComplaints];
+                if (merged.length < 5 && realUsers.length > 0) {
+                    const placeholders = [
+                        { reason: 'Wrong Tax Assessment', description: 'I was charged higher than my category.' },
+                        { reason: 'No Receipt Given', description: 'Tax collected but no receipt provided.' },
+                        { reason: 'Overcharging', description: 'Penalty applied incorrectly.' },
+                    ];
+
+                    placeholders.forEach((p, i) => {
+                        const randomUser = realUsers[i % realUsers.length];
+                        merged.push({
+                            id: `dummy-${i}`,
+                            user: randomUser.username,
+                            shop: `${randomUser.username}'s Store`,
+                            location: `${randomUser.block}, ${randomUser.district}`,
+                            reason: p.reason,
+                            description: p.description,
+                            date: new Date().toISOString(),
+                            status: 'pending',
+                            photo: null
+                        });
+                    });
+                }
+
+                setComplaints(merged);
+            } catch (error) {
+                console.error("Failed to fetch complaints:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAll();
+    }, []);
+
 
     const filtered = statusFilter ? complaints.filter(c => c.status === statusFilter) : complaints
 

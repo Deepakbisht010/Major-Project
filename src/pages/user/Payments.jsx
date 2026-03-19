@@ -1,59 +1,102 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/AuthContext'
+import api from '../../lib/api'
 import { FiCreditCard, FiCheckCircle, FiDownload } from 'react-icons/fi'
 import jsPDF from 'jspdf'
-
-const pendingPayments = [
-    { id: 'PAY-2026-01', month: 'January', year: 2026, amount: 1, penalty: 0, total: 1 },
-    { id: 'PAY-2026-02', month: 'February', year: 2026, amount: 1, penalty: 0, total: 1 },
-]
-
+import { supabase } from '../../lib/supabaseClient'
 
 export default function Payments() {
     const { t } = useTranslation()
     const { user } = useAuth()
-    const [paymentsList, setPaymentsList] = useState([
-        { id: 'PAY-2026-01', month: 'January', year: 2026, amount: 1, penalty: 0, total: 1, status: 'unpaid' },
-        { id: 'PAY-2026-02', month: 'February', year: 2026, amount: 1, penalty: 0, total: 1, status: 'unpaid' },
-    ])
+
+    const [paymentsList, setPaymentsList] = useState([]);
+    const [loadingPending, setLoadingPending] = useState(true);
+
+    const [paymentHistory, setPaymentHistory] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(true);
+
+    const [customAmount] = useState(1);
+    const [customProcessing, setCustomProcessing] = useState(false);
+
+    const monthNames = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    const fetchPendingTaxes = async () => {
+        if (!user) return;
+        setLoadingPending(true);
+        try {
+            const response = await api.get('/taxpayers/monthly-taxes');
+            if (response.data.success) {
+                setPaymentsList(response.data.taxes);
+            }
+        } catch (error) {
+            console.error("Error fetching monthly taxes:", error);
+        } finally {
+            setLoadingPending(false);
+        }
+    };
+
+    const fetchPaymentHistory = async () => {
+        if (!user) return;
+        setHistoryLoading(true);
+        try {
+            const response = await api.get('/payments/history');
+            if (response.data.success) {
+                setPaymentHistory(response.data.history);
+            }
+        } catch (error) {
+            console.error("Error fetching payment history:", error);
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
+
+    // Helper to get current month in YYYY-MM format
+    const getCurrentMonthStr = () => {
+        const d = new Date();
+        const yr = d.getFullYear();
+        const mo = String(d.getMonth() + 1).padStart(2, '0');
+        return `${yr}-${mo}`;
+    };
+    const currentMonthStr = getCurrentMonthStr();
+
+    useEffect(() => {
+        const init = async () => {
+            if (!user) return;
+            await fetchPendingTaxes();
+            await fetchPaymentHistory();
+        };
+        init();
+    }, [user]);
+
     const [processing, setProcessing] = useState(false)
     const [paymentDone, setPaymentDone] = useState(null)
     const [paymentStatus, setPaymentStatus] = useState(null) // 'pending', 'success', 'failed'
 
-    const totalPending = paymentsList
-        .filter(p => p.status !== 'paid')
-        .reduce((s, p) => s + p.total, 0)
-
+    const totalPendingAmount = paymentsList
+        .filter(p => p.status !== 'paid' && p.month <= currentMonthStr)
+        .reduce((s, p) => s + (Number(p.amount) || 0), 0)
 
     const handlePayment = async (payment) => {
         setProcessing(true)
         setPaymentStatus('pending')
 
         try {
-            // 1. Create Order in Backend
-            const orderResponse = await fetch(`${import.meta.env.VITE_API_URL}/payments/create-order`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    amount: payment.total,
-                    currency: 'INR',
-                    userId: user?.id,
-                    email: user?.email,
-                    name: user?.username || 'User',
-                    notes: {
-                        month: payment.month,
-                        year: payment.year,
-                        taxId: payment.id
-                    }
-                })
+            // 1. Create Order in Backend (Dynamic Amount)
+            const orderResponse = await api.post('/payments/create-order', {
+                amount: payment.amount,
+                currency: 'INR',
+                userId: user?.id,
+                email: user?.email,
+                name: user?.username || 'User',
+                notes: {
+                    month: payment.month,
+                    shopId: user?.id,
+                    amount: payment.amount
+                }
             });
 
-            const orderData = await orderResponse.json();
-
-            if (!orderResponse.ok) {
-                throw new Error(orderData.message || 'Failed to create order');
-            }
+            const orderData = orderResponse.data;
 
             // 2. Open Razorpay Checkout
             const options = {
@@ -66,35 +109,32 @@ export default function Payments() {
                 handler: async function (response) {
                     // 3. Verify Payment in Backend
                     try {
-                        const verifyResponse = await fetch(`${import.meta.env.VITE_API_URL}/payments/verify-payment`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature
-                            })
-                        });
+                        const verifyPayload = {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        };
 
-                        const verifyData = await verifyResponse.json();
+                        const verifyResponse = await api.post('/payments/verify-payment', verifyPayload);
+                        const verifyData = verifyResponse.data;
 
                         if (verifyData.success) {
                             const receipt = {
                                 receiptNo: 'RCP-' + Date.now(),
                                 transactionId: response.razorpay_payment_id,
-                                amount: payment.total,
-                                month: payment.month,
-                                year: payment.year,
+                                amount: payment.amount,
+                                month: monthNames[parseInt(payment.month.split('-')[1])] || payment.month,
+                                year: payment.month.split('-')[0],
                                 paidAt: new Date().toLocaleString('en-IN'),
                                 gstId: user?.gstId || 'N/A',
                                 userName: user?.username || 'User'
                             }
                             setPaymentDone(receipt)
                             setPaymentStatus('success')
-                            // Mark the item as paid in the list
-                            setPaymentsList(prev => prev.map(p =>
-                                p.id === payment.id ? { ...p, status: 'paid' } : p
-                            ))
+
+                            // Refresh both lists cleanly from the database
+                            fetchPendingTaxes();
+                            fetchPaymentHistory();
                         } else {
                             alert('Payment verification failed');
                             setPaymentStatus('failed')
@@ -104,7 +144,8 @@ export default function Payments() {
                         setPaymentStatus('failed')
                         alert('Error verifying payment');
                     } finally {
-                        setProcessing(false)
+                        setProcessing(false);
+                        setCustomProcessing(false);
                     }
                 },
                 prefill: {
@@ -121,6 +162,7 @@ export default function Payments() {
                 setPaymentStatus('failed')
                 alert(`Payment failed: ${response.error.description}`)
                 setProcessing(false)
+                setCustomProcessing(false);
             });
             rzp.open();
 
@@ -129,8 +171,26 @@ export default function Payments() {
             alert(error.message || 'Payment failed to initiate');
             setPaymentStatus('failed')
             setProcessing(false)
+            setCustomProcessing(false);
         }
     }
+
+    const handleQuickPay = async () => {
+        // Only allow quick pay for current month if not paid
+        const currentMonthRecord = paymentsList.find(p => p.month === currentMonthStr);
+        if (!currentMonthRecord) {
+            alert("No record found for current month.");
+            return;
+        }
+        if (currentMonthRecord.status === 'paid') {
+            alert("Current month is already paid.");
+            return;
+        }
+
+        setCustomProcessing(true);
+        await handlePayment(currentMonthRecord);
+        setCustomProcessing(false);
+    };
 
     const downloadReceipt = () => {
         if (!paymentDone) return
@@ -209,7 +269,7 @@ export default function Payments() {
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
                                 <span style={{ color: 'var(--text-muted)' }}>{t('user.amount')}</span>
-                                <strong style={{ color: 'var(--color-green)' }}>₹{paymentDone.amount}</strong>
+                                <strong style={{ color: 'var(--color-green)' }}>₹{Number(paymentDone.amount).toFixed(2)}</strong>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
                                 <span style={{ color: 'var(--text-muted)' }}>{t('common.date')}</span>
@@ -264,49 +324,179 @@ export default function Payments() {
             </div>
 
             {/* Pending Amount Card */}
-            <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--color-maroon)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                        <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: 4 }}>{t('user.pendingAmount')}</p>
-                        <h2 style={{ color: 'var(--color-maroon)' }}>₹{totalPending.toLocaleString()}</h2>
+            <div className="grid-2" style={{ gap: 24, marginBottom: 24 }}>
+                <div className="card" style={{ borderLeft: '4px solid var(--color-maroon)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '100%' }}>
+                        <div>
+                            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: 4 }}>Pending Amount</p>
+                            <h2 style={{ color: 'var(--color-maroon)' }}>₹{totalPendingAmount.toFixed(2)}</h2>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total unpaid to date</p>
+                        </div>
+                        <FiCreditCard size={40} color="var(--color-maroon)" style={{ opacity: 0.3 }} />
                     </div>
-                    <FiCreditCard size={40} color="var(--color-maroon)" style={{ opacity: 0.3 }} />
+                </div>
+
+                <div className="card" style={{ borderLeft: '4px solid var(--color-green)' }}>
+                    <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: 12 }}>Pay Current Month (₹{paymentsList.find(p => p.month === currentMonthStr)?.amount || 1})</p>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        <div style={{ position: 'relative', flex: 1 }}>
+                            <span style={{ position: 'absolute', left: 12, top: 10, color: 'var(--text-muted)' }}>₹</span>
+                            <input
+                                type="number"
+                                className="form-control"
+                                style={{ paddingLeft: 28 }}
+                                value={paymentsList.find(p => p.month === currentMonthStr)?.amount || 1}
+                                disabled
+                                readOnly
+                            />
+                        </div>
+                        <button
+                            className="btn btn-green"
+                            disabled={customProcessing || processing || paymentsList.find(p => p.month === currentMonthStr)?.status === 'paid'}
+                            onClick={handleQuickPay}
+                            style={{ minWidth: 100 }}
+                        >
+                            {customProcessing ? '...' : (paymentsList.find(p => p.month === currentMonthStr)?.status === 'paid' ? 'Paid' : 'Pay now')}
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Pending Payments Table */}
+            {/* Monthly Taxes Table */}
             <div className="data-table-wrapper">
                 <table className="data-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>Shop</th>
                             <th>{t('user.month')}</th>
-                            <th>{t('user.year')}</th>
                             <th>{t('user.amount')}</th>
-                            <th>{t('user.penalty')}</th>
-                            <th>Total</th>
+                            <th>{t('user.status')}</th>
                             <th>{t('common.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {paymentsList.map(p => (
-                            <tr key={p.id}>
-                                <td><strong>{p.id}</strong></td>
-                                <td>{p.month}</td>
-                                <td>{p.year}</td>
-                                <td>₹{p.amount}</td>
-                                <td>{p.penalty > 0 ? <span style={{ color: 'var(--color-maroon)' }}>₹{p.penalty}</span> : '-'}</td>
-                                <td><strong>₹{p.total}</strong></td>
-                                <td>
-                                    {p.status === 'paid' ? (
-                                        <span className="badge badge-success" style={{ color: 'var(--color-green)', fontWeight: 'bold' }}>
-                                            ✓ PAID
+                        {paymentsList.length === 0 && !loadingPending && (
+                            <tr>
+                                <td colSpan="5" style={{ textAlign: 'center', padding: '20px', backgroundColor: '#fafafa', color: '#999' }}>
+                                    No monthly tax records found.
+                                </td>
+                            </tr>
+                        )}
+                        {loadingPending && (
+                            <tr>
+                                <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
+                                    Loading monthly records...
+                                </td>
+                            </tr>
+                        )}
+                        {paymentsList.map((p, index) => {
+                            const isPaid = p.status === 'paid';
+                            const isCurrentMonth = p.month === currentMonthStr;
+                            const isFutureMonth = p.month > currentMonthStr;
+                            const isPastMonth = p.month < currentMonthStr;
+
+                            let statusLabel = '';
+                            let statusColor = '';
+                            let actionElement = null;
+
+                            if (isPaid) {
+                                statusLabel = 'Paid';
+                                statusColor = '#dcfce7'; // Light Green
+                                actionElement = <span style={{ color: '#166534', fontWeight: 'bold' }}>✅ Paid</span>;
+                            } else if (isFutureMonth) {
+                                statusLabel = 'Coming Soon';
+                                statusColor = '#f3f4f6'; // Grey
+                                actionElement = <button className="btn btn-secondary btn-sm" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>Coming Soon</button>;
+                            } else if (isCurrentMonth) {
+                                statusLabel = 'Pay Now';
+                                statusColor = '#dbeafe'; // Blue/Green
+                                actionElement = (
+                                    <button
+                                        className="btn btn-green btn-sm"
+                                        onClick={() => handlePayment(p)}
+                                        disabled={processing}
+                                        style={{ backgroundColor: '#10b981', borderColor: '#10b981' }}
+                                    >
+                                        {processing ? '...' : (t('user.payNow') || 'Pay Now')}
+                                    </button>
+                                );
+                            } else if (isPastMonth) {
+                                statusLabel = 'Pending';
+                                statusColor = '#ffedd5'; // Orange
+                                actionElement = (
+                                    <button
+                                        className="btn btn-green btn-sm"
+                                        onClick={() => handlePayment(p)}
+                                        disabled={processing}
+                                        style={{ backgroundColor: '#10b981', borderColor: '#10b981' }}
+                                    >
+                                        {processing ? '...' : (t('user.payNow') || 'Pay Now')}
+                                    </button>
+                                );
+                            }
+
+                            return (
+                                <tr key={p.id}>
+                                    <td><strong>{user?.username || 'My Shop'}</strong></td>
+                                    <td>{p.month}</td>
+                                    <td>₹ {p.amount || 1}</td>
+                                    <td>
+                                        <span className={`badge badge-${isPaid ? 'success' : isFutureMonth ? 'info' : 'warning'}`} style={isFutureMonth ? { backgroundColor: '#f3f4f6', color: '#4b5563' } : {}}>
+                                            {statusLabel}
                                         </span>
-                                    ) : (
-                                        <button className="btn btn-green btn-sm" onClick={() => handlePayment(p)} disabled={processing}>
-                                            {processing && paymentStatus === 'pending' ? 'Processing...' : t('user.payNow')}
-                                        </button>
-                                    )}
+                                    </td>
+                                    <td>{actionElement}</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Successful Payment History Table */}
+            <div className="page-header" style={{ marginTop: 40 }}>
+                <h2>{t('user.paymentHistory', 'Payment History')}</h2>
+                <p>View your past successful tax payments.</p>
+            </div>
+
+            <div className="data-table-wrapper" style={{ marginBottom: 20 }}>
+                <table className="data-table">
+                    <thead>
+                        <tr>
+                            <th>Shop</th>
+                            <th>Month</th>
+                            <th>Amount</th>
+                            <th>Payment ID</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {paymentHistory.length === 0 && !historyLoading && (
+                            <tr>
+                                <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>
+                                    No successful payments found.
+                                </td>
+                            </tr>
+                        )}
+                        {historyLoading && (
+                            <tr>
+                                <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>
+                                    Loading history...
+                                </td>
+                            </tr>
+                        )}
+                        {paymentHistory.map(ph => (
+                            <tr key={ph.id}>
+                                <td><strong>{user?.username || 'My Shop'}</strong></td>
+                                <td>{ph.month || 'N/A'}</td>
+                                <td><strong style={{ color: 'var(--color-green)' }}>₹{ph.amount || 1}</strong></td>
+                                <td style={{ fontSize: '0.85rem' }}>{ph.razorpay_payment_id || ph.transaction_id || 'N/A'}</td>
+                                <td>{new Date(ph.created_at).toLocaleString('en-IN')}</td>
+                                <td>
+                                    <span className="badge" style={{ backgroundColor: '#dcfce7', color: '#166534', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '600' }}>
+                                        ✓ Paid
+                                    </span>
                                 </td>
                             </tr>
                         ))}

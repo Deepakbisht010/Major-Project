@@ -1,0 +1,19 @@
+{
+  "id": "52cb1696-1740-4de8-9daf-41475e7097e8",
+  "auth_id": "c0147ac9-a949-488d-934d-3404968d3fc1",
+  "username": "sarthak",
+  "gst_id": "22AAAAA2670A1Z5",
+  "mobile": "5623456987",
+  "email": "sarthak1740@gmail.com",
+  "father_name": "suresh",
+  "district": "champawat",
+  "block": "Block 2",
+  "business_type": "electronics",
+  "shop_photo_url": null,
+  "user_photo_url": null,
+  "role_id": 1,
+  "is_active": true,
+  "is_verified": false,
+  "created_at": "2026-03-15T06:50:43.205275+00:00",
+  "updated_at": "2026-03-15T06:50:43.205275+00:00"
+}

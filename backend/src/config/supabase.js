@@ -16,7 +16,10 @@ if (!supabaseServiceKey || supabaseServiceKey === 'your_service_role_key_here') 
     '   Get it from: Supabase Dashboard → Project Settings → API → service_role\n' +
     '   Without it, database inserts will be blocked by Row Level Security (RLS).'
   );
+} else {
+  console.log('✅ SUPABASE_SERVICE_ROLE_KEY loaded successfully');
 }
+
 
 export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {

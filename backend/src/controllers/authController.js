@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase.js';
+import { generateTaxesForUser } from '../utils/taxGenerator.js';
 
 export const loginUser = async (req, res) => {
   try {
@@ -10,7 +11,7 @@ export const loginUser = async (req, res) => {
     // 1. Lookup the user's email from the users table using their GST ID
     const { data: profile, error: profileError } = await supabase
       .from('users')
-      .select('email, role_id, id')
+      .select('email, role_id, id, username')
       .eq('gst_id', gstId)
       .single();
 
@@ -34,6 +35,7 @@ export const loginUser = async (req, res) => {
       user: {
         id: profile.id,
         gstId: gstId,
+        username: profile.username,
         email: profile.email,
         role: profile.role_id === 1 ? 'user' : 'unknown',
         token: authData.session.access_token
@@ -101,7 +103,7 @@ export const registerUser = async (req, res) => {
     }
 
     // 3. Create the user profile in our database with the real email
-    const { error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('users')
       .insert([{
         auth_id: authId,
@@ -114,18 +116,24 @@ export const registerUser = async (req, res) => {
         block,
         business_type: businessType,
         role_id: 1
-      }]);
+      }])
+      .select()
+      .single();
 
     if (profileError) {
       console.error('Profile creation error:', profileError);
-      // Error code 42501 = Row Level Security policy violation
-      if (profileError.code === '42501') {
-        return res.status(403).json({
-          success: false,
-          error: 'Database permission error: RLS policy blocked the insert. Ensure the backend is using the service_role key.'
-        });
-      }
       return res.status(400).json({ success: false, error: 'Failed to create user profile.' });
+    }
+
+    // 4. AUTO-GENERATE 12 MONTHLY TAX RECORDS FOR THE NEW USER
+    // Generate these immediately so the user panel is populated on first login.
+    try {
+      if (profile && profile.id) {
+        console.log(`[Backend] Auto-generating tax records for new user ${profile.id} (${businessType})`);
+        await generateTaxesForUser(profile.id, businessType);
+      }
+    } catch (genError) {
+      console.warn('[Backend] Non-critical error during initial tax generation:', genError.message);
     }
 
     return res.status(201).json({ success: true, message: 'Registration successful!' });
@@ -140,20 +148,54 @@ export const loginAdmin = async (req, res) => {
   try {
     const { username, password, passkey, isDemo } = req.body;
 
-    if (isDemo && password === 'admin123' && passkey === 'ADMIN2026') {
+    // List of additional admins provided by the user
+    const extraAdmins = [
+      { username: 'Deepak Singh', password: 'deepak@1309', district: 'udhamsingh', name: 'Deepak Singh' },
+      { username: 'Manish', password: 'manish@2006', district: 'almora', name: 'Manish' },
+      { username: 'Bhavesh', password: 'bhavesh@123', district: 'nainital', name: 'Bhavesh' },
+      { username: 'sahil chand', password: 'sahil@123', district: 'chamoli', name: 'Sahil Chand' },
+      { username: 'Raja', password: 'raja@123', district: 'pithoragarh', name: 'Raja' },
+      { username: 'lalit', password: 'lalit@123', district: 'nainital', name: 'Lalit' }
+    ];
+
+
+    const matchedAdmin = extraAdmins.find(a =>
+      a.username && username &&
+      a.username.toLowerCase() === username.toLowerCase() &&
+      a.password === password
+    );
+
+    console.log(`[Admin Login Attempt] User: ${username}, isDemo: ${isDemo}`);
+
+    if ((isDemo && password === 'admin123' && (passkey === 'ADMIN2026' || !passkey)) || matchedAdmin) {
+      const adminData = matchedAdmin ? {
+        id: `admin-${matchedAdmin.username.toLowerCase().replace(/\s/g, '-')}`,
+        username: matchedAdmin.username,
+        name: matchedAdmin.name,
+        district: matchedAdmin.district,
+        role: 'super_admin'
+      } : {
+        id: 'demo-admin-id',
+        username: username || 'admin',
+        name: 'Super Admin',
+        district: 'all',
+        role: 'super_admin'
+      };
+
+      console.log(`[Admin Login Success] Logged in as: ${adminData.name} (Scope: ${adminData.district})`);
+
       return res.status(200).json({
         success: true,
         user: {
-          id: 'demo-admin-id',
-          username,
-          role: 'super_admin',
-          token: 'demo-fake-admin-jwt-token'
+          ...adminData,
+          token: `demo-fake-admin-jwt-token-${adminData.district}`
         }
       });
     }
 
-    // Add actual Supabase Admin Server-side logic here later
-    return res.status(400).json({ success: false, error: 'Not implemented for production.' });
+    console.warn(`[Admin Login Failed] Access denied for: ${username}`);
+    return res.status(400).json({ success: false, error: 'Invalid admin credentials.' });
+
 
   } catch (error) {
     console.error('Admin Login Error:', error);

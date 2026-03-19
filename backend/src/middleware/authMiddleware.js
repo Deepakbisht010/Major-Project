@@ -3,16 +3,34 @@ import { supabase } from '../config/supabase.js';
 export const requireAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
+
+    // Log headers (requested in Step 6)
+    console.log(`[Backend Auth] Incoming Request headers detected. Auth Header present: ${!!authHeader}`);
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.warn('[Backend Auth] Missing or malformed Bearer token.');
       return res.status(401).json({ error: 'Missing or invalid authorization header.' });
     }
 
     const token = authHeader.split(' ')[1];
 
+    // --- Demo logic for development (handles district-specific fake tokens) ---
+    if (token.startsWith('demo-fake-admin-jwt-token')) {
+      const district = token.replace('demo-fake-admin-jwt-token-', '') || 'all';
+      req.user = {
+        id: 'demo-admin-id',
+        user_metadata: { role: 'admin', district: district },
+        email: 'admin@example.com'
+      };
+      return next();
+    }
+    // ------------------------------------
+
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      return res.status(401).json({ error: 'Unauthorized: Invalid token.' });
+      console.error('Auth verification failed:', error?.message || 'No user found');
+      return res.status(401).json({ error: 'Unauthorized: Invalid token.', details: error?.message });
     }
 
     // Attach user to request
@@ -29,12 +47,13 @@ export const requireAdmin = async (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Unauthorized: User not authenticated.' });
     }
-    
+
     // Check if the user's role is admin from their user metadata
-    // This assumes you set up role metadata in Supabase (e.g. { "role": "admin" })
     const userRole = req.user.user_metadata?.role;
-    
-    if (userRole !== 'admin') {
+
+    const validRoles = ['admin', 'super_admin', 'district_admin'];
+
+    if (!validRoles.includes(userRole)) {
       return res.status(403).json({ error: 'Forbidden: Admin access required.' });
     }
 
