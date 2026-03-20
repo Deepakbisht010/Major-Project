@@ -1,5 +1,23 @@
 import { supabase } from '../config/supabase.js';
 import { generateTaxesForUser } from '../utils/taxGenerator.js';
+import { sendHelpEmail } from '../utils/mailer.js';
+
+export const sendHelpEmailRequest = async (req, res) => {
+  try {
+    const { name, email, mobile, message } = req.body;
+
+    // 1. Send the email
+    await sendHelpEmail({ name, email, mobile, message });
+
+    // 2. Optionally, log this in a database table for tracking
+    // await supabase.from('support_requests').insert([{ name, email, mobile, message }]);
+
+    res.status(200).json({ success: true, message: 'Message sent successfully!' });
+  } catch (error) {
+    console.error('sendHelpEmailRequest error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send message.' });
+  }
+};
 
 export const loginUser = async (req, res) => {
   try {
@@ -49,7 +67,10 @@ export const loginUser = async (req, res) => {
 };
 export const registerUser = async (req, res) => {
   try {
-    const { username, gstId, email, mobile, password, district, block, businessType, fatherName } = req.body;
+    const {
+      username, gstId, email, mobile, password, district, block,
+      businessType, fatherName, shopPhotoUrl, userPhotoUrl
+    } = req.body;
 
     // Validate required email field
     if (!email || !email.includes('@')) {
@@ -102,7 +123,7 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Auth failed to create user.' });
     }
 
-    // 3. Create the user profile in our database with the real email
+    // 3. Create the user profile in our database with the real email and photo URLs
     const { data: profile, error: profileError } = await supabase
       .from('users')
       .insert([{
@@ -115,6 +136,8 @@ export const registerUser = async (req, res) => {
         district,
         block,
         business_type: businessType,
+        shop_photo_url: shopPhotoUrl,
+        user_photo_url: userPhotoUrl,
         role_id: 1
       }])
       .select()

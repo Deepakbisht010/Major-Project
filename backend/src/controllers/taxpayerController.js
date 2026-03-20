@@ -162,3 +162,43 @@ export const generateMonthlyTaxes = async (req, res) => {
     res.status(200).json({ success: false, error: error.message || 'Internal Server Error' });
   }
 };
+export const submitComplaint = async (req, res) => {
+  try {
+    const authId = req.user.id;
+    const { shopName, location, reason, description, photoUrl } = req.body;
+
+    // 1. Resolve Auth ID to internal User ID
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_id', authId)
+      .maybeSingle();
+
+    if (userError || !user) {
+      console.error('User lookup failed for complaint:', userError);
+      return res.status(404).json({ success: false, error: 'User profile not found' });
+    }
+
+    // 2. Insert complaint using internal user.id
+    const { data: complaint, error } = await supabase
+      .from('complaints')
+      .insert([{
+        user_id: user.id,
+        shop_name: shopName,
+        location,
+        reason,
+        description,
+        photo_url: photoUrl,
+        status: 'pending'
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({ success: true, complaint });
+  } catch (error) {
+    console.error('submitComplaint error:', error);
+    res.status(500).json({ success: false, error: 'Failed to submit complaint' });
+  }
+};

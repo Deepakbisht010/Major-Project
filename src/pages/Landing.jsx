@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import Chatbot from '../components/Chatbot'
 import UttarakhandMap from '../components/UttarakhandMap'
 import {
     FiShield, FiCreditCard, FiActivity, FiMessageCircle,
@@ -15,7 +16,7 @@ import sumitImg from '../assets/sumit.jpeg'
 import rajaImg from '../assets/raja.jpeg'
 import manishImg from '../assets/manish.jpeg'
 import bhaveshImg from '../assets/bhavesh.jpeg'
-const deepakImg = '/deepak.jpg'
+import deepakImg from '../assets/deepak.jpg'
 import sahilImg from '../assets/sahil.jpeg'
 import lalitImg from '../assets/lalit.jpeg'
 import gauravImg from '../assets/gaurav.jpeg'
@@ -35,7 +36,7 @@ const teamMembers = [
     { name: 'Raja Rautela', role: 'Frontend Developer', tech: 'React, CSS', img: rajaImg },
     { name: 'Manish Paliwal', role: 'Backend Developer', tech: 'Node.js, PostgreSQL', img: manishImg },
     { name: 'Bhavesh Bisht', role: 'UI/UX Designer', tech: 'Figma, CSS', img: bhaveshImg },
-    { name: 'Deepak Bisht', role: 'Database Architect', tech: 'Supabase, SQL', img: deepakImg },
+    { name: 'Deepak Singh', role: 'Database Architect', tech: 'Supabase, SQL', img: deepakImg },
     { name: 'Sahil Chand', role: 'Testing Lead', tech: 'Jest, Cypress', img: sahilImg },
     { name: 'Lalit Singh', role: 'DevOps Engineer', tech: 'Docker, CI/CD', img: lalitImg },
     { name: 'Gaurav Bisht', role: 'Documentation', tech: 'Technical Writing', img: gauravImg },
@@ -51,22 +52,75 @@ export default function Landing() {
     const [helpForm, setHelpForm] = useState({ name: '', email: '', mobile: '', message: '' })
     const [helpSent, setHelpSent] = useState(false)
     const [complaintForm, setComplaintForm] = useState({ shopName: '', location: '', reason: '', description: '' })
+    const [complaintFile, setComplaintFile] = useState(null)
     const [complaintSent, setComplaintSent] = useState(false)
+    const [complaintLoading, setComplaintLoading] = useState(false)
     const [selectedMember, setSelectedMember] = useState(null)
 
-    const handleHelpSubmit = (e) => {
+    const handleHelpSubmit = async (e) => {
         e.preventDefault()
-        setHelpSent(true)
-        setTimeout(() => setHelpSent(false), 3000)
-        setHelpForm({ name: '', email: '', mobile: '', message: '' })
+        try {
+            const api = (await import('../lib/api')).default;
+            await api.post('/auth/send-help-email', helpForm);
+            setHelpSent(true)
+            setTimeout(() => setHelpSent(false), 5000)
+            setHelpForm({ name: '', email: '', mobile: '', message: '' })
+        } catch (error) {
+            console.error('Email sending failed:', error);
+            alert('Failed to send message. Please contact directly via email.');
+        }
     }
 
-    const handleComplaintSubmit = (e) => {
+    const uploadFile = async (file, folder) => {
+        if (!file) return null;
+        const { supabase } = await import('../lib/supabaseClient');
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+            const filePath = `${folder}/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('complaints-docs')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage
+                .from('complaints-docs')
+                .getPublicUrl(filePath);
+
+            return data.publicUrl;
+        } catch (err) {
+            console.error(`Upload error in ${folder}:`, err.message);
+            return null;
+        }
+    }
+
+    const handleComplaintSubmit = async (e) => {
         e.preventDefault()
         if (!isAuthenticated) { alert(t('complaint.loginRequired')); return }
-        setComplaintSent(true)
-        setTimeout(() => setComplaintSent(false), 3000)
-        setComplaintForm({ shopName: '', location: '', reason: '', description: '' })
+
+        setComplaintLoading(true)
+        try {
+            const photoUrl = await uploadFile(complaintFile, 'complaints');
+
+            // Call API
+            const api = (await import('../lib/api')).default;
+            await api.post('/taxpayers/complaints', {
+                ...complaintForm,
+                photoUrl
+            });
+
+            setComplaintSent(true)
+            setTimeout(() => setComplaintSent(false), 3000)
+            setComplaintForm({ shopName: '', location: '', reason: '', description: '' })
+            setComplaintFile(null)
+        } catch (error) {
+            console.error('Complaint submission failed:', error);
+            alert('Failed to submit complaint. Please try again.');
+        } finally {
+            setComplaintLoading(false)
+        }
     }
 
     return (
@@ -171,7 +225,7 @@ export default function Landing() {
                                     </div>
                                     <div>
                                         <h5>{t('help.officialEmail')}</h5>
-                                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>{t('help.emailValue')}</p>
+                                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>deepakbisht4050@gmail.com</p>
                                     </div>
                                 </div>
                             </div>
@@ -182,7 +236,7 @@ export default function Landing() {
                                     </div>
                                     <div>
                                         <h5>{t('help.helpline')}</h5>
-                                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>{t('help.helplineValue')}</p>
+                                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>+91 7300756458</p>
                                     </div>
                                 </div>
                             </div>
@@ -248,16 +302,16 @@ export default function Landing() {
                                     onChange={e => setComplaintForm({ ...complaintForm, description: e.target.value })}></textarea>
                             </div>
                             <div className="form-group">
-                                <label>{t('complaint.uploadPhoto')}</label>
+                                <label>{t('complaint.uploadPhoto')} {complaintFile && <span style={{ color: 'var(--color-green)' }}>(Selected)</span>}</label>
                                 <div className="file-input-wrapper">
-                                    <div className="file-input-label">
-                                        <FiCamera size={18} /> {t('complaint.uploadPhoto')}
+                                    <div className="file-input-label" style={{ borderColor: complaintFile ? 'var(--color-green)' : undefined }}>
+                                        <FiCamera size={18} /> {complaintFile ? complaintFile.name : t('complaint.uploadPhoto')}
                                     </div>
-                                    <input type="file" accept="image/*" />
+                                    <input type="file" accept="image/*" onChange={e => setComplaintFile(e.target.files[0])} />
                                 </div>
                             </div>
-                            <button type="submit" className="btn btn-maroon btn-lg" style={{ width: '100%' }}>
-                                {t('complaint.submit')}
+                            <button type="submit" className="btn btn-maroon btn-lg" style={{ width: '100%' }} disabled={complaintLoading}>
+                                {complaintLoading ? 'Submitting...' : t('complaint.submit')}
                             </button>
                         </form>
                     </div>
@@ -304,6 +358,7 @@ export default function Landing() {
             </section>
 
             <Footer />
+            <Chatbot />
         </div>
     )
 }

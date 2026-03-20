@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import Captcha from '../components/Captcha'
 import { FiCamera, FiCheckCircle } from 'react-icons/fi'
+import { supabase } from '../lib/supabaseClient'
 
 const businessTypes = ['general', 'medical', 'clothing', 'electronics', 'restaurant', 'hardware', 'stationery', 'other']
 const districts = ['almora', 'bageshwar', 'chamoli', 'champawat', 'dehradun', 'haridwar', 'nainital', 'pauri', 'pithoragarh', 'rudraprayag', 'tehri', 'udhamsingh', 'uttarkashi']
@@ -37,6 +38,10 @@ export default function Register() {
     const [error, setError] = useState('')
     const [success, setSuccess] = useState(false)
 
+    // New states for files
+    const [shopFile, setShopFile] = useState(null)
+    const [userFile, setUserFile] = useState(null)
+
     const [form, setForm] = useState({
         username: '', gstId: '', email: '', mobile: '', password: '', confirmPassword: '',
         district: '', block: '', businessType: '', fatherName: ''
@@ -62,6 +67,30 @@ export default function Register() {
         }
     }
 
+    const uploadFile = async (file, folder) => {
+        if (!file) return null;
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+            const filePath = `${folder}/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('registration-docs')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage
+                .from('registration-docs')
+                .getPublicUrl(filePath);
+
+            return data.publicUrl;
+        } catch (err) {
+            console.error(`Upload error in ${folder}:`, err.message);
+            throw new Error(`Failed to upload ${folder} photo. ` + err.message);
+        }
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
@@ -74,7 +103,24 @@ export default function Register() {
 
         setLoading(true)
         try {
-            await register(form)
+            // 1. Upload photos first
+            let shopPhotoUrl = null;
+            let userPhotoUrl = null;
+
+            if (shopFile) {
+                shopPhotoUrl = await uploadFile(shopFile, 'shops');
+            }
+            if (userFile) {
+                userPhotoUrl = await uploadFile(userFile, 'users');
+            }
+
+            // 2. Register with URLs
+            await register({
+                ...form,
+                shopPhotoUrl,
+                userPhotoUrl
+            })
+
             setSuccess(true)
             setTimeout(() => navigate('/login'), 2000)
         } catch (err) {
@@ -223,21 +269,21 @@ export default function Register() {
 
                         <div className="auth-form-row">
                             <div className="form-group">
-                                <label>{t('auth.shopPhoto')}</label>
+                                <label>{t('auth.shopPhoto')} {shopFile && <span style={{ color: 'var(--color-green)' }}>(Selected)</span>}</label>
                                 <div className="file-input-wrapper">
-                                    <div className="file-input-label">
-                                        <FiCamera size={16} /> {t('auth.shopPhoto')}
+                                    <div className="file-input-label" style={{ borderColor: shopFile ? 'var(--color-green)' : undefined }}>
+                                        <FiCamera size={16} /> {shopFile ? shopFile.name : t('auth.shopPhoto')}
                                     </div>
-                                    <input type="file" accept="image/*" />
+                                    <input type="file" accept="image/*" onChange={e => setShopFile(e.target.files[0])} />
                                 </div>
                             </div>
                             <div className="form-group">
-                                <label>{t('auth.userPhoto')}</label>
+                                <label>{t('auth.userPhoto')} {userFile && <span style={{ color: 'var(--color-green)' }}>(Selected)</span>}</label>
                                 <div className="file-input-wrapper">
-                                    <div className="file-input-label">
-                                        <FiCamera size={16} /> {t('auth.userPhoto')}
+                                    <div className="file-input-label" style={{ borderColor: userFile ? 'var(--color-green)' : undefined }}>
+                                        <FiCamera size={16} /> {userFile ? userFile.name : t('auth.userPhoto')}
                                     </div>
-                                    <input type="file" accept="image/*" />
+                                    <input type="file" accept="image/*" onChange={e => setUserFile(e.target.files[0])} />
                                 </div>
                             </div>
                         </div>
@@ -246,7 +292,12 @@ export default function Register() {
 
                         <button type="submit" className="btn btn-maroon btn-lg" style={{ width: '100%', marginTop: 8 }}
                             disabled={loading}>
-                            {loading ? t('common.loading') : t('nav.register')}
+                            {loading ? (
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }}></span>
+                                    {shopFile || userFile ? 'Uploading Photos...' : t('common.loading')}
+                                </span>
+                            ) : t('nav.register')}
                         </button>
                     </form>
 
