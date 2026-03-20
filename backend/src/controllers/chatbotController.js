@@ -1,47 +1,34 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { supabase } from '../config/supabase.js';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export const getBotResponse = async (req, res) => {
+    // Check for API Key
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        console.error("[Chatbot] GEMINI_API_KEY missing in .env");
+        return res.status(500).json({ success: false, error: "API Key logic failed" });
+    }
+
     try {
-        const { message, history } = req.body;
+        const genAI = new GoogleGenerativeAI(apiKey);
 
-        // Models to try in order
-        const modelsToTry = [process.env.GEMINI_MODEL, "gemini-1.5-flash", "gemini-pro"].filter(Boolean);
-        let lastError = null;
+        // Use gemini-pro as the primary stable model
+        const model = genAI.getGenerativeModel({
+            model: "gemini-pro",
+            systemInstruction: "You are an E-TaxPay assistant for Uttarakhand. Be professional and brief. Support: deepakbisht4050@gmail.com."
+        });
 
-        for (const modelName of modelsToTry) {
-            try {
-                const model = genAI.getGenerativeModel({
-                    model: modelName,
-                    systemInstruction: "You are an E-TaxPay assistant for Uttarakhand. Professional and brief. Contact: deepakbisht4050@gmail.com, 7300756458."
-                });
+        console.log("[Chatbot] Requesting AI for:", req.body.message);
 
-                const firstUserIndex = (history || []).findIndex(m => m.role === 'user');
-                const chatHistory = firstUserIndex !== -1 ? (history || []).slice(firstUserIndex) : [];
+        // Simple text generation
+        const result = await model.generateContent(req.body.message || "Hello");
+        const response = await result.response;
+        const text = response.text();
 
-                const chat = model.startChat({ history: chatHistory });
-                const result = await chat.sendMessage(message);
-                const botText = result.response.text();
+        console.log("[Chatbot] AI Success!");
+        res.status(200).json({ success: true, text: text });
 
-                // Save to Supabase (Optional: link to user if req.user exists)
-                await supabase.from('chat_messages').insert([
-                    { role: 'user', content: message, user_id: req.user?.id },
-                    { role: 'model', content: botText, user_id: req.user?.id }
-                ]);
-
-                return res.status(200).json({ success: true, text: botText });
-            } catch (err) {
-                lastError = err;
-                console.warn(`[Chatbot] Model ${modelName} failed, trying next... Error: ${err.message}`);
-                continue;
-            }
-        }
-
-        throw lastError;
     } catch (error) {
-        console.error("[Chatbot Error]", error.message);
-        res.status(500).json({ success: false, error: "AI Engine error. Check your API key and model availability." });
+        console.error("[Chatbot CRITICAL Error]", error.message);
+        res.status(500).json({ success: false, error: error.message });
     }
 };
