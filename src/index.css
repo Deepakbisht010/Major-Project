@@ -817,7 +817,32 @@ select.form-control {
   margin-left: var(--sidebar-width);
   padding: 32px;
   min-height: calc(100vh - var(--navbar-height));
+  position: relative;
+  overflow: hidden;
 }
+
+/* Mountain silhouette background at top of dashboard */
+.panel-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 220px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 220' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='mtnGrad' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%23821D30' stop-opacity='0.22'/%3E%3Cstop offset='50%25' stop-color='%23E8863A' stop-opacity='0.18'/%3E%3Cstop offset='100%25' stop-color='%235B9A59' stop-opacity='0.22'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon points='0,160 60,80 120,120 180,50 240,100 300,30 360,90 420,20 480,80 540,40 600,100 660,60 720,110 780,45 840,90 900,25 960,85 1020,50 1080,95 1140,30 1200,80 1260,55 1320,100 1380,70 1440,110 1440,220 0,220' fill='url(%23mtnGrad)' /%3E%3Cpolygon points='0,180 80,120 160,150 240,95 320,135 400,80 480,125 560,100 640,145 720,90 800,130 880,75 960,120 1040,95 1120,140 1200,105 1280,130 1360,110 1440,140 1440,220 0,220' fill='%23821D30' fill-opacity='0.14' /%3E%3Cpolygon points='0,200 120,170 240,185 360,160 480,178 600,155 720,172 840,158 960,175 1080,162 1200,178 1320,165 1440,180 1440,220 0,220' fill='%235B9A59' fill-opacity='0.16' /%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: top center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* All content inside panel-content should sit above the mountain bg */
+.panel-content>* {
+  position: relative;
+  z-index: 1;
+}
+
 
 /* ---------- Section Layouts ---------- */
 .section {

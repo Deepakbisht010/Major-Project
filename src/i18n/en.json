@@ -75,7 +75,18 @@
     },
     "team": {
         "sectionTitle": "Our Team",
-        "sectionSubtitle": "Meet the people behind E-TaxPay"
+        "sectionSubtitle": "Meet the people behind E-TaxPay",
+        "memberDesc": "Dedicated team member working on E-TaxPay for transparent governance.",
+        "roles": {
+            "projectLead": "Project Lead",
+            "frontendDev": "Frontend Developer",
+            "backendDev": "Backend Developer",
+            "uiuxDesigner": "UI/UX Designer",
+            "dbArchitect": "Database Architect",
+            "testingLead": "Testing Lead",
+            "devops": "DevOps Engineer",
+            "documentation": "Documentation"
+        }
     },
     "footer": {
         "quickLinks": "Quick Links",
@@ -195,6 +206,7 @@
         "selectYear": "Select Year",
         "generateNotice": "Generate Notice",
         "noticeTemplate": "Notice Template",
+        "submitting": "Submitting...",
         "complaintStatus": "Status",
         "pending": "Pending",
         "verified": "Verified",

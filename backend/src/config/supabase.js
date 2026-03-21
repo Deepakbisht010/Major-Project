@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Re-read env configs after any other configs.
-const supabaseUrl = process.env.SUPABASE_URL || 'https://jbyvlsqkrprilefdxdhq.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL || 'https://uocisjmxihshzixpaxlv.supabase.co';
 
 // ⚠️ The backend MUST use the service_role key — not the anon key.
 //     The anon key is blocked by Row Level Security (RLS) for table inserts.

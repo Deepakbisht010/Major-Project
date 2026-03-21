@@ -32,14 +32,14 @@ const aboutFeatures = [
 ]
 
 const teamMembers = [
-    { name: 'Sumit Bhandari', role: 'Project Lead', tech: 'React, Supabase', img: sumitImg },
-    { name: 'Raja Rautela', role: 'Frontend Developer', tech: 'React, CSS', img: rajaImg },
-    { name: 'Manish Paliwal', role: 'Backend Developer', tech: 'Node.js, PostgreSQL', img: manishImg },
-    { name: 'Bhavesh Bisht', role: 'UI/UX Designer', tech: 'Figma, CSS', img: bhaveshImg },
-    { name: 'Deepak Singh', role: 'Database Architect', tech: 'Supabase, SQL', img: deepakImg },
-    { name: 'Sahil Chand', role: 'Testing Lead', tech: 'Jest, Cypress', img: sahilImg },
-    { name: 'Lalit Singh', role: 'DevOps Engineer', tech: 'Docker, CI/CD', img: lalitImg },
-    { name: 'Gaurav Bisht', role: 'Documentation', tech: 'Technical Writing', img: gauravImg },
+    { name: 'Sumit Bhandari', roleKey: 'projectLead', tech: 'React, Supabase', img: sumitImg },
+    { name: 'Raja Rautela', roleKey: 'frontendDev', tech: 'React, CSS', img: rajaImg },
+    { name: 'Manish Paliwal', roleKey: 'backendDev', tech: 'Node.js, PostgreSQL', img: manishImg },
+    { name: 'Bhavesh Bisht', roleKey: 'uiuxDesigner', tech: 'Figma, CSS', img: bhaveshImg },
+    { name: 'Deepak Singh', roleKey: 'dbArchitect', tech: 'Supabase, SQL', img: deepakImg },
+    { name: 'Sahil Chand', roleKey: 'testingLead', tech: 'Jest, Cypress', img: sahilImg },
+    { name: 'Lalit Singh', roleKey: 'devops', tech: 'Docker, CI/CD', img: lalitImg },
+    { name: 'Gaurav Bisht', roleKey: 'documentation', tech: 'Technical Writing', img: gauravImg },
 ]
 
 const complaintReasons = [
@@ -311,7 +311,7 @@ export default function Landing() {
                                 </div>
                             </div>
                             <button type="submit" className="btn btn-maroon btn-lg" style={{ width: '100%' }} disabled={complaintLoading}>
-                                {complaintLoading ? 'Submitting...' : t('complaint.submit')}
+                                {complaintLoading ? t('admin.submitting') : t('complaint.submit')}
                             </button>
                         </form>
                     </div>
@@ -338,11 +338,11 @@ export default function Landing() {
                             >
                                 <img src={m.img} alt={m.name} className="team-photo" />
                                 <h4>{m.name}</h4>
-                                <p className="role">{m.role}</p>
+                                <p className="role">{t(`team.roles.${m.roleKey}`)}</p>
                                 {selectedMember === i && (
                                     <div style={{ marginTop: 10, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                                         <p style={{ marginBottom: 4 }}>🛠 {m.tech}</p>
-                                        <p style={{ marginBottom: 8 }}>Dedicated team member working on E-TaxPay for transparent governance.</p>
+                                        <p style={{ marginBottom: 8 }}>{t('team.memberDesc')}</p>
                                         <div className="social-links">
                                             <a href="#"><FiGithub /></a>
                                             <a href="#"><FiLinkedin /></a>

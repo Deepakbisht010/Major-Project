@@ -173,6 +173,10 @@ export const loginAdmin = async (req, res) => {
 
     // List of additional admins provided by the user
     const extraAdmins = [
+      // ── SUPER ADMIN — Full state-wide access ──
+      { username: 'Deepak Bisht', password: 'deepak@2308', passkey: 'DEEPAK2026', district: 'all', name: 'Deepak Bisht' },
+      { username: 'superadmin', password: 'superadmin@2026', passkey: 'ADMIN2026', district: 'all', name: 'Super Admin' },
+      // ── District Admins ──────────────────────────────────────────────────────
       { username: 'Deepak Singh', password: 'deepak@1309', district: 'udhamsingh', name: 'Deepak Singh' },
       { username: 'Manish', password: 'manish@2006', district: 'almora', name: 'Manish' },
       { username: 'Bhavesh', password: 'bhavesh@123', district: 'nainital', name: 'Bhavesh' },
@@ -185,7 +189,8 @@ export const loginAdmin = async (req, res) => {
     const matchedAdmin = extraAdmins.find(a =>
       a.username && username &&
       a.username.toLowerCase() === username.toLowerCase() &&
-      a.password === password
+      a.password === password &&
+      (!a.passkey || a.passkey === passkey)
     );
 
     console.log(`[Admin Login Attempt] User: ${username}, isDemo: ${isDemo}`);

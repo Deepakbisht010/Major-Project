@@ -75,7 +75,18 @@
     },
     "team": {
         "sectionTitle": "हमारी टीम",
-        "sectionSubtitle": "ई-टैक्सपे के पीछे के लोगों से मिलें"
+        "sectionSubtitle": "ई-टैक्सपे के पीछे के लोगों से मिलें",
+        "memberDesc": "पारदर्शी शासन के लिए ई-टैक्सपे पर काम करने वाले समर्पित टीम सदस्य।",
+        "roles": {
+            "projectLead": "प्रोजेक्ट लीड",
+            "frontendDev": "फ्रंटएंड डेवलपर",
+            "backendDev": "बैकएंड डेवलपर",
+            "uiuxDesigner": "UI/UX डिज़ाइनर",
+            "dbArchitect": "डेटाबेस आर्किटेक्ट",
+            "testingLead": "टेस्टिंग लीड",
+            "devops": "DevOps इंजीनियर",
+            "documentation": "दस्तावेज़ीकरण"
+        }
     },
     "footer": {
         "quickLinks": "त्वरित लिंक",
@@ -195,6 +206,7 @@
         "selectYear": "वर्ष चुनें",
         "generateNotice": "नोटिस जनरेट करें",
         "noticeTemplate": "नोटिस टेम्पलेट",
+        "submitting": "दर्ज हो रहा है...",
         "complaintStatus": "स्थिति",
         "pending": "लंबित",
         "verified": "सत्यापित",
