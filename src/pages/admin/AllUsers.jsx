@@ -25,7 +25,7 @@ export default function AllUsers() {
     // Initial Fetch
     const fetchUsers = async () => {
         try {
-            const response = await api.get('/admin/users');
+            const response = await api.get('admin/users');
             if (response.data.success) {
                 setAllUsers(response.data.users || []);
             }

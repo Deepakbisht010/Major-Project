@@ -44,7 +44,7 @@ const Chatbot = () => {
 
         try {
             const api = (await import('../lib/api')).default;
-            const response = await api.post('/chatbot/chat', {
+            const response = await api.post('chatbot/chat', {
                 message: msg,
                 history: messages.map(m => ({ role: m.isBot ? 'model' : 'user', parts: [{ text: m.text }] }))
             });

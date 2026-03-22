@@ -24,7 +24,7 @@ export default function TaxTable() {
             setLoading(true);
             try {
                 // Now fetching through the secure API backend (Point 6)
-                const response = await api.get('/taxpayers/monthly-taxes');
+                const response = await api.get('taxpayers/monthly-taxes');
 
                 if (response.data.success && response.data.taxes) {
                     const data = response.data.taxes;

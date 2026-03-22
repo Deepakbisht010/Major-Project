@@ -61,7 +61,7 @@ export default function Landing() {
         e.preventDefault()
         try {
             const api = (await import('../lib/api')).default;
-            await api.post('/auth/send-help-email', helpForm);
+            await api.post('auth/send-help-email', helpForm);
             setHelpSent(true)
             setTimeout(() => setHelpSent(false), 5000)
             setHelpForm({ name: '', email: '', mobile: '', message: '' })
@@ -106,7 +106,7 @@ export default function Landing() {
 
             // Call API
             const api = (await import('../lib/api')).default;
-            await api.post('/taxpayers/complaints', {
+            await api.post('taxpayers/complaints', {
                 ...complaintForm,
                 photoUrl
             });

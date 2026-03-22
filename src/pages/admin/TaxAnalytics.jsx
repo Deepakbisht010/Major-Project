@@ -64,7 +64,7 @@ export default function TaxAnalytics() {
     useEffect(() => {
         const fetchAnalytics = async () => {
             try {
-                const response = await api.get('/admin/analytics');
+                const response = await api.get('admin/analytics');
                 if (response.data.success) {
                     const real = response.data.data;
 

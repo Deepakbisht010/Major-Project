@@ -25,7 +25,7 @@ export default function Payments() {
         if (!user) return;
         setLoadingPending(true);
         try {
-            const response = await api.get('/taxpayers/monthly-taxes');
+            const response = await api.get('taxpayers/monthly-taxes');
             if (response.data.success) {
                 setPaymentsList(response.data.taxes);
             }
@@ -40,7 +40,7 @@ export default function Payments() {
         if (!user) return;
         setHistoryLoading(true);
         try {
-            const response = await api.get('/payments/history');
+            const response = await api.get('payments/history');
             if (response.data.success) {
                 setPaymentHistory(response.data.history);
             }
@@ -83,7 +83,7 @@ export default function Payments() {
 
         try {
             // 1. Create Order in Backend (Dynamic Amount)
-            const orderResponse = await api.post('/payments/create-order', {
+            const orderResponse = await api.post('payments/create-order', {
                 amount: payment.amount,
                 currency: 'INR',
                 userId: user?.id,
@@ -115,7 +115,7 @@ export default function Payments() {
                             razorpay_signature: response.razorpay_signature
                         };
 
-                        const verifyResponse = await api.post('/payments/verify-payment', verifyPayload);
+                        const verifyResponse = await api.post('payments/verify-payment', verifyPayload);
                         const verifyData = verifyResponse.data;
 
                         if (verifyData.success) {

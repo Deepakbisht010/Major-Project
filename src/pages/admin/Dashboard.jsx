@@ -60,7 +60,7 @@ export default function Dashboard() {
 
     const fetchDashboardData = async () => {
         try {
-            const response = await api.get('/admin/metrics');
+            const response = await api.get('admin/metrics');
             if (response.data.success) {
                 setMetrics(prev => ({ ...prev, ...response.data.metrics }));
             }

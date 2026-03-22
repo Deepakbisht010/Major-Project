@@ -21,8 +21,8 @@ export default function ComplaintManagement() {
             try {
                 // Fetch real users and complaints
                 const [userRes, compRes] = await Promise.all([
-                    api.get('/admin/users'),
-                    api.get('/admin/complaints')
+                    api.get('admin/users'),
+                    api.get('admin/complaints')
                 ]);
 
                 const realUsers = userRes.data.users || [];

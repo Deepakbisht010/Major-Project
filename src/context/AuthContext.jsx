@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
         // This will now hit the backend route for both types to get real district/profile data.
 
         try {
-            const endpoint = type === 'user' ? '/auth/login/user' : '/auth/login/admin';
+            const endpoint = type === 'user' ? 'auth/login/user' : 'auth/login/admin';
 
             // Add isDemo flag for testing against the backend's dummy login
             const authPayload = { ...credentials, isDemo: true };
@@ -66,7 +66,7 @@ export function AuthProvider({ children }) {
     const register = async (userData) => {
         try {
             // Send the form data to our new Supabase-backed endpoint
-            const response = await api.post('/auth/register/user', userData);
+            const response = await api.post('auth/register/user', userData);
             return response.data;
         } catch (error) {
             // Return specific backend error if any, or a generic fallback
