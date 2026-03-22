@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an Axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://epay-backend-lfz1.onrender.com/api',
   headers: {
     'Content-Type': 'application/json'
   }
