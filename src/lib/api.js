@@ -1,8 +1,19 @@
 import axios from 'axios';
 
 // Create an Axios instance with base configuration
+let baseUrl = import.meta.env.VITE_API_URL || 'https://epay-backend-lfz1.onrender.com/api/';
+
+// Ensure it ends with /api/
+if (!baseUrl.endsWith('/api/')) {
+  if (baseUrl.endsWith('/')) {
+    baseUrl += 'api/';
+  } else {
+    baseUrl += '/api/';
+  }
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://epay-backend-lfz1.onrender.com/api/',
+  baseURL: baseUrl,
   headers: {
     'Content-Type': 'application/json'
   }
