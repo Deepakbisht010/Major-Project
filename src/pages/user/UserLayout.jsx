@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
 export default function UserLayout() {
     const { user } = useAuth()
     const [sidebarOpen, setSidebarOpen] = useState(false)
+
+    const location = useLocation()
+    useEffect(() => {
+        setSidebarOpen(false)
+    }, [location.pathname])
 
     useEffect(() => {
         const handleToggle = () => setSidebarOpen(prev => !prev)

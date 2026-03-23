@@ -3,8 +3,15 @@ import { Outlet } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
 
+import { useLocation } from 'react-router-dom'
+
 export default function AdminLayout() {
     const [sidebarOpen, setSidebarOpen] = useState(false)
+    const { pathname } = useLocation()
+
+    useEffect(() => {
+        setSidebarOpen(false)
+    }, [pathname])
 
     useEffect(() => {
         const handleToggle = () => setSidebarOpen(prev => !prev)

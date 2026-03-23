@@ -963,9 +963,11 @@ select.form-control {
   justify-content: center;
 }
 
+.hero-map img,
 .hero-map svg {
   width: 100%;
   max-width: 450px;
+  height: auto;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
 }
 
@@ -1719,6 +1721,11 @@ select.form-control {
 
   .hero-map {
     order: -1;
+    margin-bottom: 20px;
+  }
+
+  .hero-map img {
+    max-width: 320px;
   }
 }
 
