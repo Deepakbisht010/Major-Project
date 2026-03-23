@@ -148,6 +148,7 @@ export default function TaxTable() {
                         <tr>
                             <th>{t('user.month')}</th>
                             <th>{t('user.amount')}</th>
+                            <th>Penalty (2%)</th>
                             <th>{t('user.status')}</th>
                             <th>{t('user.date')}</th>
                             <th>{t('user.time')}</th>
@@ -172,6 +173,9 @@ export default function TaxTable() {
                             <tr key={r.id}>
                                 <td>{r.month}</td>
                                 <td>₹{r.amount}</td>
+                                <td style={{ color: r.penalty > 0 ? 'var(--color-maroon)' : 'inherit' }}>
+                                    {r.penalty > 0 ? `2% = ₹${r.penalty}` : '₹0'}
+                                </td>
                                 <td>
                                     <span className={`badge badge-${r.status === 'paid' ? 'paid' : 'warning'}`}>
                                         {statusIcon(r.status)} {t(`user.${r.status}`) || r.status}

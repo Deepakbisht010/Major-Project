@@ -75,7 +75,7 @@ export default function Payments() {
 
     const totalPendingAmount = paymentsList
         .filter(p => p.status !== 'paid' && p.month <= currentMonthStr)
-        .reduce((s, p) => s + (Number(p.amount) || 0), 0)
+        .reduce((s, p) => s + (Number(p.total) || Number(p.amount) || 0), 0)
 
     const handlePayment = async (payment) => {
         setProcessing(true)
@@ -84,7 +84,7 @@ export default function Payments() {
         try {
             // 1. Create Order in Backend (Dynamic Amount)
             const orderResponse = await api.post('payments/create-order', {
-                amount: payment.amount,
+                amount: payment.total || payment.amount,
                 currency: 'INR',
                 userId: user?.id,
                 email: user?.email,
@@ -122,7 +122,7 @@ export default function Payments() {
                             const receipt = {
                                 receiptNo: 'RCP-' + Date.now(),
                                 transactionId: response.razorpay_payment_id,
-                                amount: payment.amount,
+                                amount: payment.total || payment.amount,
                                 month: monthNames[parseInt(payment.month.split('-')[1])] || payment.month,
                                 year: payment.month.split('-')[0],
                                 paidAt: new Date().toLocaleString('en-IN'),
@@ -370,6 +370,7 @@ export default function Payments() {
                             <th>Shop</th>
                             <th>{t('user.month')}</th>
                             <th>{t('user.amount')}</th>
+                            <th>Penalty (2%)</th>
                             <th>{t('user.status')}</th>
                             <th>{t('common.actions')}</th>
                         </tr>
@@ -440,6 +441,9 @@ export default function Payments() {
                                     <td><strong>{user?.username || 'My Shop'}</strong></td>
                                     <td>{p.month}</td>
                                     <td>₹ {p.amount || 1}</td>
+                                    <td style={{ color: p.penalty > 0 ? 'var(--color-maroon)' : 'inherit' }}>
+                                        {p.penalty > 0 ? `2% = ₹${p.penalty}` : '₹0'}
+                                    </td>
                                     <td>
                                         <span className={`badge badge-${isPaid ? 'success' : isFutureMonth ? 'info' : 'warning'}`} style={isFutureMonth ? { backgroundColor: '#f3f4f6', color: '#4b5563' } : {}}>
                                             {statusLabel}
