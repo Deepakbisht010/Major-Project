@@ -1,16 +1,23 @@
+import { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
-
 export default function UserLayout() {
     const { user } = useAuth()
+    const [sidebarOpen, setSidebarOpen] = useState(false)
+
+    useEffect(() => {
+        const handleToggle = () => setSidebarOpen(prev => !prev)
+        window.addEventListener('toggleSidebar', handleToggle)
+        return () => window.removeEventListener('toggleSidebar', handleToggle)
+    }, [])
 
     return (
         <div>
             <Navbar variant="panel" />
             <div className="panel-layout">
-                <Sidebar type="user" />
+                <Sidebar type="user" isOpen={sidebarOpen} />
                 <main className="panel-content">
                     {/* Mountain Silhouette Background */}
                     <div style={{
