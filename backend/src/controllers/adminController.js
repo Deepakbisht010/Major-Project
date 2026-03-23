@@ -49,6 +49,7 @@ export const getAllUsers = async (req, res) => {
 export const getMetrics = async (req, res) => {
   try {
     const adminDistrict = req.user.user_metadata?.district;
+    console.log(`[Admin Metrics] Fetching for district: ${adminDistrict}`);
 
     const mapDistrict = (d) => {
       if (!d) return d;
@@ -62,30 +63,40 @@ export const getMetrics = async (req, res) => {
     // 1. Fetch total users (filtered by district if needed)
     let userQuery = supabase.from('users').select(`
       *,
-      taxes!user_id ( status ),
-      monthly_taxes!shop_id ( status )
+      taxes!user_id ( status, amount ),
+      monthly_taxes!shop_id ( status, amount )
     `);
-
 
     if (isFiltered) userQuery = userQuery.eq('district', targetDistrict);
     const { data: users, error: userError } = await userQuery;
 
     if (userError) throw userError;
 
-    // 2. Fetch total taxes collected (sum of amounts where status is 'success')
-    let paymentQuery = supabase.from('payments').select('amount, status, created_at, user_id, users!user_id(district, username, gst_id, business_type, block)');
-    if (isFiltered) paymentQuery = paymentQuery.filter('users.district', 'eq', targetDistrict);
+    // 2. Fetch successful payments (with inner join to filter by user district at DB level)
+    let paymentQuery = supabase.from('payments').select(`
+      amount, status, created_at, user_id, 
+      users!user_id!inner(district, username, gst_id, business_type, block)
+    `);
+
+    if (isFiltered) {
+      paymentQuery = paymentQuery.eq('users.district', targetDistrict);
+    }
+
     const { data: payments, error: paymentError } = await paymentQuery;
-
-
-    if (paymentError) throw paymentError;
+    if (paymentError) {
+      console.error('[Admin Metrics] Payment query error:', paymentError);
+      throw paymentError;
+    }
 
     const successfulPayments = (payments || []).filter(p => p.status === 'success' || p.status === 'captured');
     const totalTaxesCollected = successfulPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0) || 0;
 
+    console.log(`[Admin Metrics] Total collected: ${totalTaxesCollected} from ${successfulPayments.length} successful payments`);
+
     // 3. Paid vs Unpaid calculation
     let paidCount = 0;
     users.forEach(u => {
+      // A user is considered "paid" if they have ANY record with 'paid' status
       const hasTraditionalPaid = u.taxes?.some(t => t.status === 'paid');
       const hasMonthlyPaid = u.monthly_taxes?.some(t => t.status === 'paid');
       if (hasTraditionalPaid || hasMonthlyPaid) paidCount++;
@@ -97,7 +108,6 @@ export const getMetrics = async (req, res) => {
       paidShops: paidCount,
       unpaidShops: users.length - paidCount,
       recentPayments: (successfulPayments || [])
-        .filter(p => p.users)
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
         .slice(0, 5)
         .map(p => ({
@@ -120,7 +130,7 @@ export const getMetrics = async (req, res) => {
         return acc;
       }, {})).map(([name, count]) => ({
         name: name.charAt(0).toUpperCase() + name.slice(1),
-        value: users.length > 0 ? (count / users.length) * 100 : 0,
+        value: users.length > 0 ? Math.round((count / users.length) * 100) : 0,
         color: name === 'medical' ? '#5B9A59' : name === 'general' ? '#E8863A' : '#821D30'
       })),
       monthlyData: Object.values(successfulPayments.reduce((acc, p) => {
@@ -131,10 +141,6 @@ export const getMetrics = async (req, res) => {
         return acc;
       }, {})).sort((a, b) => a.sortKey - b.sortKey).slice(-6)
     };
-
-
-
-
 
     res.status(200).json({ success: true, metrics });
 

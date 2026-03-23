@@ -60,12 +60,16 @@ export default function Dashboard() {
 
     const fetchDashboardData = async () => {
         try {
+            console.log("[Dashboard] Fetching fresh metrics...");
             const response = await api.get('admin/metrics');
             if (response.data.success) {
-                setMetrics(prev => ({ ...prev, ...response.data.metrics }));
+                console.log("[Dashboard] Metrics fetched successfully:", response.data.metrics);
+                setMetrics(response.data.metrics);
+            } else {
+                console.error("[Dashboard] API returned success: false", response.data.error);
             }
         } catch (error) {
-            console.error("Failed to fetch dashboard metrics");
+            console.error("Failed to fetch dashboard metrics", error);
         } finally {
             setLoading(false);
         }
@@ -78,15 +82,17 @@ export default function Dashboard() {
         // REAL-TIME: Re-fetch metrics on any user or payment activity
         const channel = supabase
             .channel('admin-dashboard-realtime')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, () => {
-                console.log("[Realtime] User added, refreshing dashboard...");
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, (payload) => {
+                console.log("[Realtime] User change detected:", payload.eventType);
                 fetchDashboardData();
             })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'payments' }, () => {
-                console.log("[Realtime] Payment detected, refreshing dashboard...");
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, (payload) => {
+                console.log("[Realtime] Payment change detected (INSERT/UPDATE/DELETE):", payload.eventType);
                 fetchDashboardData();
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log(`[Realtime] Subscription status: ${status}`);
+            });
 
         return () => {
             supabase.removeChannel(channel);
@@ -105,7 +111,16 @@ export default function Dashboard() {
         <div>
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <h2>{t('admin.dashboard')}</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+                        <h2>{t('admin.dashboard')}</h2>
+                        <button
+                            className="btn btn-icon btn-secondary"
+                            onClick={fetchDashboardData}
+                            title="Refresh Data"
+                        >
+                            <FiDollarSign size={14} />
+                        </button>
+                    </div>
                     <p>Real-time overview of tax collection across {(user?.district === 'all' || user?.district === 'admin') ? 'the whole state' : `the ${user?.district} district`}</p>
                 </div>
                 {(user?.district === 'all' || user?.district === 'admin') && (
