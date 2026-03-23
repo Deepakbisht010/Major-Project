@@ -38,6 +38,16 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error('[Global ERROR Handler]:', err);
+    res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+        details: err.message
+    });
+});
+
 // Start Server
 app.listen(PORT, () => {
     console.log(`[Backend SUCCESS] Server is running on port ${PORT}`);

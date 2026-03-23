@@ -17,6 +17,7 @@ export const sendHelpEmailRequest = async (req, res) => {
     }
 
     // 1. Send the email
+    console.log('[Backend] Calling sendHelpEmail utility...');
     await sendHelpEmail({ name, email, mobile, message });
 
     console.log(`[Backend SUCCESS] Help Email sent for ${name}`);

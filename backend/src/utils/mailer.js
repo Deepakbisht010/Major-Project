@@ -34,6 +34,8 @@ export const sendHelpEmail = async (helpData) => {
     };
 
     try {
+        console.log('[Mailer] Transporter configuration:', { service: 'gmail', user: process.env.EMAIL_USER || 'deepakbisht4050@gmail.com' });
+        console.log('[Mailer] Sending mail to:', mailOptions.to);
         const info = await transporter.sendMail(mailOptions);
         console.log('[Mailer] Email sent successfully:', info.messageId);
         return { success: true, messageId: info.messageId };

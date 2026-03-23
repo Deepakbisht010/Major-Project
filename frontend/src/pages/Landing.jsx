@@ -16,7 +16,7 @@ import sumitImg from '../assets/sumit.jpeg'
 import rajaImg from '../assets/raja.jpeg'
 import manishImg from '../assets/manish.jpeg'
 import bhaveshImg from '../assets/bhavesh.jpeg'
-import deepakImg from '../assets/deepak.jpg'
+import deepakImg from '../assets/Deepak.jpg'
 import sahilImg from '../assets/sahil.jpeg'
 import lalitImg from '../assets/lalit.jpeg'
 import gauravImg from '../assets/gaurav.jpeg'
@@ -108,19 +108,30 @@ export default function Landing() {
 
     const handleHelpSubmit = async (e) => {
         e.preventDefault()
+        console.log('--- Help Submit Start ---');
         setHelpLoading(true)
+        console.log('Current helpForm state:', helpForm);
 
         try {
+            console.log('Importing API instance...');
             const api = (await import('../lib/api')).default;
-            await api.post('auth/send-help-email', helpForm);
+            console.log('Base URL:', api.defaults.baseURL);
+
+            console.log('Sending API request to auth/send-help-email...');
+            const response = await api.post('auth/send-help-email', helpForm);
+            console.log('Server response received:', response.data);
+
             setHelpSent(true)
             setTimeout(() => setHelpSent(false), 5000)
             setHelpForm({ name: '', email: '', mobile: '', message: '' })
+            alert('Success! Message sent.');
         } catch (error) {
-            console.error('Email sending failed:', error);
+            console.error('--- Email Submission Error ---');
+            console.error('Error Object:', error);
             const msg = error.response?.data?.error || 'Failed to send message.';
-            alert(msg + ' Please contact directly via email.');
+            alert('Error: ' + msg);
         } finally {
+            console.log('Setting loading to false (finally block)');
             setHelpLoading(false);
         }
     }

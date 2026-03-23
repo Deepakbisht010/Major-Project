@@ -45,14 +45,23 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      console.error('[API Response] 401 Unauthorized detected. Redirecting to login...');
-      // Clear expired token/session
-      localStorage.removeItem('etaxpay-user');
-      // Redirect to login (avoiding crash as requested)
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+    if (error.response) {
+      // Server returned an error (4xx, 5xx)
+      console.error(`[API Response Error] ${error.config.url} returned ${error.response.status}:`, error.response.data);
+
+      if (error.response.status === 401) {
+        console.error('[API Response] 401 Unauthorized detected. Redirecting to login...');
+        localStorage.removeItem('etaxpay-user');
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
       }
+    } else if (error.request) {
+      // Request was made but no response was received
+      console.error('[API Network Error] No response received from server. Check if backend is running at:', baseUrl);
+    } else {
+      // Something happened in setting up the request
+      console.error('[API Setup Error]:', error.message);
     }
     return Promise.reject(error);
   }
