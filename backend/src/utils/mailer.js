@@ -5,9 +5,14 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER || 'deepakbisht4050@gmail.com',
-        pass: process.env.EMAIL_APP_PASSWORD // User must generate an App Password in Gmail Settings
+        pass: process.env.EMAIL_APP_PASSWORD
     }
 });
+
+// Verify connection configuration
+if (!process.env.EMAIL_APP_PASSWORD) {
+    console.warn('[Mailer] EMAIL_APP_PASSWORD is not set. Email sending will fail.');
+}
 
 export const sendHelpEmail = async (helpData) => {
     const { name, email, mobile, message } = helpData;

@@ -7,6 +7,15 @@ export const sendHelpEmailRequest = async (req, res) => {
     const { name, email, mobile, message } = req.body;
     console.log(`[Backend] Help Email Request received from: ${name} (${email})`);
 
+    // Check for email credentials
+    if (!process.env.EMAIL_APP_PASSWORD) {
+      console.error('[Backend ERROR] EMAIL_APP_PASSWORD is not set in environment variables.');
+      return res.status(500).json({
+        success: false,
+        error: 'Email service is not configured on the server. Please set EMAIL_APP_PASSWORD.'
+      });
+    }
+
     // 1. Send the email
     await sendHelpEmail({ name, email, mobile, message });
 
@@ -14,7 +23,11 @@ export const sendHelpEmailRequest = async (req, res) => {
     res.status(200).json({ success: true, message: 'Message sent successfully!' });
   } catch (error) {
     console.error('[Backend ERROR] sendHelpEmailRequest error:', error);
-    res.status(500).json({ success: false, error: 'Failed to send message.' });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send message.',
+      details: error.message
+    });
   }
 };
 

@@ -219,6 +219,10 @@ export const submitComplaint = async (req, res) => {
     res.status(201).json({ success: true, complaint });
   } catch (error) {
     console.error('submitComplaint error:', error);
-    res.status(500).json({ success: false, error: 'Failed to submit complaint' });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to submit complaint. Table may be missing in Supabase.',
+      details: error.message
+    });
   }
 };

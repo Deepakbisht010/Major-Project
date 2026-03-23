@@ -32,14 +32,62 @@ const aboutFeatures = [
 ]
 
 const teamMembers = [
-    { name: 'Sumit Bhandari', roleKey: 'projectLead', tech: 'React, Supabase', img: sumitImg },
-    { name: 'Raja Rautela', roleKey: 'frontendDev', tech: 'React, CSS', img: rajaImg },
-    { name: 'Manish Paliwal', roleKey: 'backendDev', tech: 'Node.js, PostgreSQL', img: manishImg },
-    { name: 'Bhavesh Bisht', roleKey: 'uiuxDesigner', tech: 'Figma, CSS', img: bhaveshImg },
-    { name: 'Deepak Singh', roleKey: 'dbArchitect', tech: 'Supabase, SQL', img: deepakImg },
-    { name: 'Sahil Chand', roleKey: 'testingLead', tech: 'Jest, Cypress', img: sahilImg },
-    { name: 'Lalit Singh', roleKey: 'devops', tech: 'Docker, CI/CD', img: lalitImg },
-    { name: 'Gaurav Bisht', roleKey: 'documentation', tech: 'Technical Writing', img: gauravImg },
+    {
+        name: 'Sumit Bhandari',
+        roleKey: 'projectLead',
+        tech: 'React, Supabase',
+        img: sumitImg,
+        socials: { github: 'https://github.com/sumitbhandari2006', linkedin: 'https://www.linkedin.com/in/sumit-bhandari-1424b133a?utm_source=share_via&utm_content=profile&utm_medium=member_android', instagram: 'https://www.instagram.com/yeah_sumithere?igsh=MTVhN3V1OWtsMm9lYw==', mail: 'mailto:sumit@example.com' }
+    },
+    {
+        name: 'Raja Rautela',
+        roleKey: 'frontendDev',
+        tech: 'React, CSS',
+        img: rajaImg,
+        socials: { github: 'https://github.com/raja393-disigner', linkedin: 'https://www.linkedin.com/in/raja-rautela-07b589328/', instagram: 'https://www.instagram.com/r_for_rautela', mail: 'mailto:raja@example.com' }
+    },
+    {
+        name: 'Manish Paliwal',
+        roleKey: 'backendDev',
+        tech: 'Node.js, PostgreSQL',
+        img: manishImg,
+        socials: { github: 'https://github.com/Manish363-dot', linkedin: 'https://www.linkedin.com/in/manish-paliwal-389a74327?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app', instagram: 'https://www.instagram.com/manish__uk_01?igsh=MW4xOWt1eWRqaWw4Yw==', mail: 'mailto:manish@example.com' }
+    },
+    {
+        name: 'Bhavesh Bisht',
+        roleKey: 'uiuxDesigner',
+        tech: 'Figma, CSS',
+        img: bhaveshImg,
+        socials: { github: '#', linkedin: '#', instagram: 'https://www.instagram.com/bhavesh_bishtttt/', mail: 'mailto:bhavesh@example.com' }
+    },
+    {
+        name: 'Deepak Singh',
+        roleKey: 'dbArchitect',
+        tech: 'Supabase, PostgreSQL',
+        img: deepakImg,
+        socials: { github: 'https://github.com/Deepakbisht010', linkedin: 'https://www.linkedin.com/in/deepak-singh-a05583328/', instagram: 'https://www.instagram.com/deepak_bisht.001/', mail: 'mailto:deepak@example.com' }
+    },
+    {
+        name: 'Sahil Chand',
+        roleKey: 'testingLead',
+        tech: 'Jest, Cypress',
+        img: sahilImg,
+        socials: { github: 'https://github.com/sahil-chand-21', linkedin: 'https://www.linkedin.com/in/sahil-chand-077org/', instagram: 'https://www.instagram.com/sahil._.chand/', mail: 'mailto:sahil@example.com' }
+    },
+    {
+        name: 'Lalit Singh',
+        roleKey: 'devops',
+        tech: 'Docker, CI/CD',
+        img: lalitImg,
+        socials: { github: '#', linkedin: 'https://www.linkedin.com/in/lalit-singh-kanyal-929583328/', instagram: 'https://www.instagram.com/?hl=en', mail: 'mailto:lalit@example.com' }
+    },
+    {
+        name: 'Gaurav Bisht',
+        roleKey: 'documentation',
+        tech: 'Technical Writing',
+        img: gauravImg,
+        socials: { github: '#', linkedin: '#', instagram: 'https://www.instagram.com/stories/gauri_bisht_07/', mail: 'mailto:gaurav@example.com' }
+    },
 ]
 
 const complaintReasons = [
@@ -70,7 +118,8 @@ export default function Landing() {
             setHelpForm({ name: '', email: '', mobile: '', message: '' })
         } catch (error) {
             console.error('Email sending failed:', error);
-            alert('Failed to send message. Please contact directly via email.');
+            const msg = error.response?.data?.error || 'Failed to send message.';
+            alert(msg + ' Please contact directly via email.');
         } finally {
             setHelpLoading(false);
         }
@@ -122,7 +171,8 @@ export default function Landing() {
             setComplaintFile(null)
         } catch (error) {
             console.error('Complaint submission failed:', error);
-            alert('Failed to submit complaint. Please try again.');
+            const msg = error.response?.data?.error || 'Failed to submit complaint.';
+            alert(msg + ' Please try again.');
         } finally {
             setComplaintLoading(false)
         }
@@ -338,22 +388,29 @@ export default function Landing() {
                         {teamMembers.map((m, i) => (
                             <div
                                 key={i}
-                                className={`team-card animate-in delay-${(i % 4) + 1}`}
+                                className={`team-card animate-in delay-${(i % 4) + 1} ${selectedMember === i ? 'active' : ''}`}
                                 onClick={() => setSelectedMember(selectedMember === i ? null : i)}
                             >
-                                <img src={m.img} alt={m.name} className="team-photo" />
-                                <h4>{m.name}</h4>
-                                <p className="role">{t(`team.roles.${m.roleKey}`)}</p>
+                                <div className="team-card-header"></div>
+                                <div className="team-photo-container">
+                                    <img src={m.img} alt={m.name} className="team-photo" />
+                                </div>
+                                <div className="team-card-body">
+                                    <h4>{m.name}</h4>
+                                    <p className="role">{t(`team.roles.${m.roleKey}`)}</p>
+                                    <div className="tech-badge">
+                                        {m.tech}
+                                    </div>
+                                    <div className="social-links">
+                                        <a href={m.socials.github} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}><FiGithub /></a>
+                                        <a href={m.socials.linkedin} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}><FiLinkedin /></a>
+                                        <a href={m.socials.instagram} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}><FiInstagram /></a>
+                                        <a href={m.socials.mail} onClick={(e) => e.stopPropagation()}><FiMail /></a>
+                                    </div>
+                                </div>
                                 {selectedMember === i && (
-                                    <div style={{ marginTop: 10, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                                        <p style={{ marginBottom: 4 }}>🛠 {m.tech}</p>
-                                        <p style={{ marginBottom: 8 }}>{t('team.memberDesc')}</p>
-                                        <div className="social-links">
-                                            <a href="#"><FiGithub /></a>
-                                            <a href="#"><FiLinkedin /></a>
-                                            <a href="#"><FiInstagram /></a>
-                                            <a href="#"><FiMail /></a>
-                                        </div>
+                                    <div className="team-expand-info">
+                                        <p>{t('team.memberDesc')}</p>
                                     </div>
                                 )}
                             </div>
