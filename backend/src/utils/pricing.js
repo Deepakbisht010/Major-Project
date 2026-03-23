@@ -4,13 +4,12 @@ import { supabase } from '../config/supabase.js';
  * Fetch tax amount for a business type from business_pricing table.
  * Defaults to 1 if not found.
  */
-export const getTaxAmount = async (businessType) => {
+export const getTaxAmount = async (businessType, shopId, month) => {
 
     try {
         const normalizedType = (businessType || 'other').toLowerCase();
-        console.log(`[Pricing] Looking up amount for: ${normalizedType}`);
 
-        const { data, error } = await supabase
+        let { data, error } = await supabase
             .from('business_pricing')
             .select('amount')
             .ilike('business_type', normalizedType)
@@ -18,15 +17,38 @@ export const getTaxAmount = async (businessType) => {
 
         if (error) {
             console.error('[Pricing] Database lookup error:', error.message);
-            return 1;
+            data = { amount: 1 }; // Fallback
         }
 
-        if (!data) {
-            console.warn(`[Pricing] No price match for: ${normalizedType}, defaulting to 1`);
-            return 1;
+        let baseAmount = Number(data?.amount || 1);
+        let finalAmount = baseAmount;
+        let penalty = 0;
+
+        // Check for 2% penalty (Point: Late Payment)
+        if (shopId && month) {
+            // Check if there are any pending months BEFORE the one being paid
+            // OR if the month being paid is itself older than current month
+            const now = new Date();
+            const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            const isPastMonth = month < currentMonthStr;
+
+            // Check if there are any 'unpaid' / 'pending' taxes for this shop before the current month
+            const { count: pendingCount } = await supabase
+                .from('monthly_taxes')
+                .select('*', { count: 'exact', head: true })
+                .eq('shop_id', shopId)
+                .lt('month', currentMonthStr)
+                .neq('status', 'paid');
+
+            if (isPastMonth || (pendingCount && pendingCount > 0)) {
+                penalty = baseAmount * 0.02;
+                finalAmount = baseAmount + penalty;
+                console.log(`[Pricing] Penalty applied (+2%): ${penalty} for shop ${shopId} (Month: ${month}, Past: ${isPastMonth}, PendingMonths: ${pendingCount})`);
+            }
         }
 
-        return Number(data.amount);
+        return Number(finalAmount.toFixed(2));
     } catch (err) {
         console.error('getTaxAmount error:', err);
         return 1;

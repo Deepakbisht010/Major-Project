@@ -37,8 +37,8 @@ export const createOrder = async (req, res) => {
             return res.status(404).json({ message: 'User business type not found.' });
         }
 
-        // 2. Fetch dynamic amount (Point 4)
-        const amount = await getTaxAmount(user.business_type);
+        // 2. Fetch dynamic amount (with 2% penalty for late payments)
+        const amount = await getTaxAmount(user.business_type, shopId, notes?.month);
 
         // --- ENFORCE SMART PAYMENT LOGIC ---
         // 2. Only allow payment for current month (or past months)
