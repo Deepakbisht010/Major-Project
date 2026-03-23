@@ -51,6 +51,7 @@ export default function Landing() {
     const { isAuthenticated } = useAuth()
     const [helpForm, setHelpForm] = useState({ name: '', email: '', mobile: '', message: '' })
     const [helpSent, setHelpSent] = useState(false)
+    const [helpLoading, setHelpLoading] = useState(false)
     const [complaintForm, setComplaintForm] = useState({ shopName: '', location: '', reason: '', description: '' })
     const [complaintFile, setComplaintFile] = useState(null)
     const [complaintSent, setComplaintSent] = useState(false)
@@ -59,6 +60,8 @@ export default function Landing() {
 
     const handleHelpSubmit = async (e) => {
         e.preventDefault()
+        setHelpLoading(true)
+
         try {
             const api = (await import('../lib/api')).default;
             await api.post('auth/send-help-email', helpForm);
@@ -68,6 +71,8 @@ export default function Landing() {
         } catch (error) {
             console.error('Email sending failed:', error);
             alert('Failed to send message. Please contact directly via email.');
+        } finally {
+            setHelpLoading(false);
         }
     }
 
@@ -212,8 +217,8 @@ export default function Landing() {
                                 <textarea className="form-control" required value={helpForm.message}
                                     onChange={e => setHelpForm({ ...helpForm, message: e.target.value })}></textarea>
                             </div>
-                            <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
-                                <FiSend size={16} /> {t('help.submit')}
+                            <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={helpLoading}>
+                                {helpLoading ? t('admin.submitting') : <><FiSend size={16} /> {t('help.submit')}</>}
                             </button>
                         </form>
 

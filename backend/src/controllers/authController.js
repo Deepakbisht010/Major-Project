@@ -5,16 +5,15 @@ import { sendHelpEmail } from '../utils/mailer.js';
 export const sendHelpEmailRequest = async (req, res) => {
   try {
     const { name, email, mobile, message } = req.body;
+    console.log(`[Backend] Help Email Request received from: ${name} (${email})`);
 
     // 1. Send the email
     await sendHelpEmail({ name, email, mobile, message });
 
-    // 2. Optionally, log this in a database table for tracking
-    // await supabase.from('support_requests').insert([{ name, email, mobile, message }]);
-
+    console.log(`[Backend SUCCESS] Help Email sent for ${name}`);
     res.status(200).json({ success: true, message: 'Message sent successfully!' });
   } catch (error) {
-    console.error('sendHelpEmailRequest error:', error);
+    console.error('[Backend ERROR] sendHelpEmailRequest error:', error);
     res.status(500).json({ success: false, error: 'Failed to send message.' });
   }
 };
