@@ -117,24 +117,27 @@ export const getMonthlyTaxes = async (req, res) => {
     const basePrice = await getTaxAmount(profile.business_type);
 
     const now = new Date();
-    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const currentMonthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+
+    console.log(`[MonthlyTaxes] User: ${profile.username}, MonthNow: ${currentMonthStr}, Base: ${basePrice}`);
 
     const dynamicTaxes = (taxes || []).map(t => {
       const isPastMonth = t.month < currentMonthStr;
       const isPaid = t.status === 'paid';
 
-      // Calculate penalty (only for unpaid past months in this simplified view)
-      // or if any month before this one is unpaid?
-      // For the UI, let's keep it consistent: if it's past and not paid, show penalty.
       let penalty = 0;
       if (!isPaid && isPastMonth) {
         penalty = basePrice * 0.02;
+        console.log(`[Penalty Applied] Month: ${t.month}, Penalty: ${penalty}`);
       }
 
       return {
         ...t,
-        amount: basePrice, // Base amount
-        penalty: Number(penalty.toFixed(2)),
+        amount: basePrice,
+        penalty: Number(penalty.toFixed(10)), // High precision temporarily for debugging
+        penalty_display: penalty > 0 ? `2% = ₹${penalty.toFixed(2)}` : '₹0',
         total: Number((basePrice + penalty).toFixed(2))
       };
     });

@@ -173,8 +173,8 @@ export default function TaxTable() {
                             <tr key={r.id}>
                                 <td>{r.month}</td>
                                 <td>₹{r.amount}</td>
-                                <td style={{ color: r.penalty > 0 ? 'var(--color-maroon)' : 'inherit' }}>
-                                    {r.penalty > 0 ? `2% = ₹${r.penalty}` : '₹0'}
+                                <td style={{ color: (r.penalty > 0 || r.penalty_display !== '₹0') ? 'var(--color-maroon)' : 'inherit' }}>
+                                    {r.penalty_display || (r.penalty > 0 ? `2% = ₹${r.penalty}` : '₹0')}
                                 </td>
                                 <td>
                                     <span className={`badge badge-${r.status === 'paid' ? 'paid' : 'warning'}`}>

@@ -441,8 +441,8 @@ export default function Payments() {
                                     <td><strong>{user?.username || 'My Shop'}</strong></td>
                                     <td>{p.month}</td>
                                     <td>₹ {p.amount || 1}</td>
-                                    <td style={{ color: p.penalty > 0 ? 'var(--color-maroon)' : 'inherit' }}>
-                                        {p.penalty > 0 ? `2% = ₹${p.penalty}` : '₹0'}
+                                    <td style={{ color: (p.penalty > 0 || p.penalty_display !== '₹0') ? 'var(--color-maroon)' : 'inherit' }}>
+                                        {p.penalty_display || (p.penalty > 0 ? `2% = ₹${p.penalty}` : '₹0')}
                                     </td>
                                     <td>
                                         <span className={`badge badge-${isPaid ? 'success' : isFutureMonth ? 'info' : 'warning'}`} style={isFutureMonth ? { backgroundColor: '#f3f4f6', color: '#4b5563' } : {}}>
