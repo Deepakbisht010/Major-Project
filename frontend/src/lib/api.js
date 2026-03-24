@@ -14,6 +14,7 @@ if (!baseUrl.endsWith('/api/')) {
 
 const api = axios.create({
   baseURL: baseUrl,
+  timeout: 15000, // 15 seconds timeout
   headers: {
     'Content-Type': 'application/json'
   }
