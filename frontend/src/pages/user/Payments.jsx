@@ -74,7 +74,7 @@ export default function Payments() {
     const [paymentStatus, setPaymentStatus] = useState(null) // 'pending', 'success', 'failed'
 
     const totalPendingAmount = paymentsList
-        .filter(p => p.status !== 'paid' && p.month <= currentMonthStr)
+        .filter(p => p.status !== 'paid' && p.status !== 'not_applicable' && p.month <= currentMonthStr)
         .reduce((s, p) => s + (Number(p.total) || Number(p.amount) || 0), 0)
 
     const handlePayment = async (payment) => {
@@ -400,17 +400,23 @@ export default function Payments() {
                             let statusColor = '';
                             let actionElement = null;
 
-                            if (isPaid) {
+                            const isNotApplicable = p.status === 'not_applicable';
+
+                            if (isNotApplicable) {
+                                statusLabel = '-';
+                                statusColor = '#f3f4f6';
+                                actionElement = <span style={{ color: '#999' }}>N/A</span>;
+                            } else if (isPaid) {
                                 statusLabel = 'Paid';
-                                statusColor = '#dcfce7'; // Light Green
+                                statusColor = '#dcfce7';
                                 actionElement = <span style={{ color: '#166534', fontWeight: 'bold' }}>✅ Paid</span>;
                             } else if (isFutureMonth) {
                                 statusLabel = 'Coming Soon';
-                                statusColor = '#f3f4f6'; // Grey
+                                statusColor = '#f3f4f6';
                                 actionElement = <button className="btn btn-secondary btn-sm" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>Coming Soon</button>;
                             } else if (isCurrentMonth) {
                                 statusLabel = 'Pay Now';
-                                statusColor = '#dbeafe'; // Blue/Green
+                                statusColor = '#dbeafe';
                                 actionElement = (
                                     <button
                                         className="btn btn-green btn-sm"
@@ -423,7 +429,7 @@ export default function Payments() {
                                 );
                             } else if (isPastMonth) {
                                 statusLabel = 'Pending';
-                                statusColor = '#ffedd5'; // Orange
+                                statusColor = '#ffedd5';
                                 actionElement = (
                                     <button
                                         className="btn btn-green btn-sm"
@@ -440,12 +446,12 @@ export default function Payments() {
                                 <tr key={p.id}>
                                     <td><strong>{user?.username || 'My Shop'}</strong></td>
                                     <td>{p.month}</td>
-                                    <td>₹ {p.amount || 1}</td>
+                                    <td>{isNotApplicable ? '-' : `₹ ${p.amount || 0}`}</td>
                                     <td style={{ color: (p.penalty > 0 || p.penalty_display !== '₹0') ? 'var(--color-maroon)' : 'inherit' }}>
-                                        {p.penalty_display || (p.penalty > 0 ? `2% = ₹${p.penalty}` : '₹0')}
+                                        {isNotApplicable ? '-' : (p.penalty_display || (p.penalty > 0 ? `2% = ₹${p.penalty}` : '₹0'))}
                                     </td>
                                     <td>
-                                        <span className={`badge badge-${isPaid ? 'success' : isFutureMonth ? 'info' : 'warning'}`} style={isFutureMonth ? { backgroundColor: '#f3f4f6', color: '#4b5563' } : {}}>
+                                        <span className={`badge badge-${isPaid ? 'success' : isFutureMonth || isNotApplicable ? 'info' : 'warning'}`} style={isFutureMonth || isNotApplicable ? { backgroundColor: '#f3f4f6', color: '#4b5563' } : {}}>
                                             {statusLabel}
                                         </span>
                                     </td>

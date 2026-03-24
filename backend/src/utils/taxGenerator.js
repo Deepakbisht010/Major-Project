@@ -9,16 +9,24 @@ export const generateTaxesForUser = async (shopId, businessType, yearInput) => {
         const year = yearInput || new Date().getFullYear();
         const amount = await getTaxAmount(businessType || 'Other');
 
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth(); // 0-indexed (0 = Jan)
+
         const months = Array.from({ length: 12 }, (_, i) =>
             `${year}-${String(i + 1).padStart(2, '0')}`
         );
 
-        const inserts = months.map(m => ({
-            shop_id: shopId,
-            month: m,
-            amount,
-            status: 'pending'
-        }));
+        const inserts = months.map((m, index) => {
+            const isPastMonth = year < currentYear || (year === currentYear && index < currentMonth);
+
+            return {
+                shop_id: shopId,
+                month: m,
+                amount: isPastMonth ? 0 : amount,
+                status: isPastMonth ? 'not_applicable' : 'pending'
+            };
+        });
 
         console.log(`[TaxGenerator] Generating ${inserts.length} monthly records for shopId ${shopId} (Type: ${businessType}, Year: ${year})`);
 

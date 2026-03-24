@@ -55,7 +55,7 @@ export const getMonthlyTaxes = async (req, res) => {
 
     let { data: profile, error: profileError } = await supabase
       .from('users')
-      .select('id, business_type, username, email')
+      .select('id, business_type, username, email, created_at')
       .eq('auth_id', authId)
       .maybeSingle();
 
@@ -64,7 +64,7 @@ export const getMonthlyTaxes = async (req, res) => {
       dbLog(`AuthID lookup failed for ${authId}. Trying email fallback: ${req.user.email}`);
       const { data: fallbackProfile } = await supabase
         .from('users')
-        .select('id, business_type, username, email')
+        .select('id, business_type, username, email, created_at')
         .eq('email', req.user.email)
         .maybeSingle();
 
@@ -105,11 +105,13 @@ export const getMonthlyTaxes = async (req, res) => {
         // Generate a 12-month array anyway so the user can see and pay them, 
         // even if the backend is currently having RLS issues saving them.
         const year = new Date().getFullYear();
+        const currentMonthIndex = new Date().getMonth();
+
         taxes = Array.from({ length: 12 }, (_, i) => ({
           shop_id: profile.id,
           month: `${year}-${String(i + 1).padStart(2, '0')}`,
-          amount: 0, // will be overridden below
-          status: 'pending'
+          amount: 0,
+          status: i < currentMonthIndex ? 'not_applicable' : 'pending'
         }));
       }
     }
@@ -123,22 +125,41 @@ export const getMonthlyTaxes = async (req, res) => {
 
     console.log(`[MonthlyTaxes] User: ${profile.username}, MonthNow: ${currentMonthStr}, Base: ${basePrice}`);
 
+    const registrationDate = new Date(profile.created_at || now);
+    const regYear = registrationDate.getFullYear();
+    const regMonth = registrationDate.getMonth() + 1;
+    const regMonthStr = `${regYear}-${String(regMonth).padStart(2, '0')}`;
+
+    console.log(`[MonthlyTaxes] User: ${profile.username}, RegMonth: ${regMonthStr}, MonthNow: ${currentMonthStr}`);
+
     const dynamicTaxes = (taxes || []).map(t => {
+      // Logic: If month is before registration month, it should be not_applicable
+      // UNLESS it was already paid (edge case)
+      const isBeforeRegistration = t.month < regMonthStr;
       const isPastMonth = t.month < currentMonthStr;
       const isPaid = t.status === 'paid';
 
+      // Force not_applicable if it's before registration and not paid
+      const isNotApplicable = (t.status === 'not_applicable' || isBeforeRegistration) && !isPaid;
+
       let penalty = 0;
-      if (!isPaid && isPastMonth) {
+      let displayAmount = basePrice;
+
+      if (isNotApplicable) {
+        displayAmount = 0;
+        penalty = 0;
+      } else if (!isPaid && isPastMonth) {
         penalty = basePrice * 0.02;
         console.log(`[Penalty Applied] Month: ${t.month}, Penalty: ${penalty}`);
       }
 
       return {
         ...t,
-        amount: basePrice,
-        penalty: Number(penalty.toFixed(10)), // High precision temporarily for debugging
-        penalty_display: penalty > 0 ? `2% = ₹${penalty.toFixed(2)}` : '₹0',
-        total: Number((basePrice + penalty).toFixed(2))
+        status: isNotApplicable ? 'not_applicable' : t.status,
+        amount: displayAmount,
+        penalty: Number(penalty.toFixed(10)),
+        penalty_display: isNotApplicable ? '-' : (penalty > 0 ? `2% = ₹${penalty.toFixed(2)}` : '₹0'),
+        total: Number((displayAmount + penalty).toFixed(2))
       };
     });
 

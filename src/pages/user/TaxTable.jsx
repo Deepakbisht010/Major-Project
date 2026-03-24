@@ -84,6 +84,7 @@ export default function TaxTable() {
     const statusIcon = (status) => {
         if (status === 'paid') return <FiCheckCircle color="var(--color-green)" />
         if (status === 'overdue') return <FiAlertTriangle color="var(--color-maroon)" />
+        if (status === 'not_applicable') return null;
         return <FiXCircle color="var(--color-saffron)" />
     }
 
@@ -172,14 +173,18 @@ export default function TaxTable() {
                         {filtered.map(r => (
                             <tr key={r.id}>
                                 <td>{r.month}</td>
-                                <td>₹{r.amount}</td>
+                                <td>{r.status === 'not_applicable' ? '-' : `₹${r.amount}`}</td>
                                 <td style={{ color: (r.penalty > 0 || r.penalty_display !== '₹0') ? 'var(--color-maroon)' : 'inherit' }}>
-                                    {r.penalty_display || (r.penalty > 0 ? `2% = ₹${r.penalty}` : '₹0')}
+                                    {r.status === 'not_applicable' ? '-' : (r.penalty_display || (r.penalty > 0 ? `2% = ₹${r.penalty}` : '₹0'))}
                                 </td>
                                 <td>
-                                    <span className={`badge badge-${r.status === 'paid' ? 'paid' : 'warning'}`}>
-                                        {statusIcon(r.status)} {t(`user.${r.status}`) || r.status}
-                                    </span>
+                                    {r.status === 'not_applicable' ? (
+                                        <span className="badge badge-neutral">-</span>
+                                    ) : (
+                                        <span className={`badge badge-${r.status === 'paid' ? 'paid' : 'warning'}`}>
+                                            {statusIcon(r.status)} {t(`user.${r.status}`) || r.status}
+                                        </span>
+                                    )}
                                 </td>
                                 <td>{r.paidDate}</td>
                                 <td>{r.paidTime}</td>
