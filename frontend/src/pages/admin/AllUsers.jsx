@@ -120,7 +120,7 @@ export default function AllUsers() {
 
         doc.autoTable({
             startY: 22,
-            head: [['S.No', 'Name', 'GST ID', 'Block', 'Type', 'Month/Year', 'Status', 'Paid Date', 'Mobile']],
+            head: [['S.No', 'Owner Name', 'GST ID', 'Block', 'Type', 'Month/Year', 'Status', 'Paid Date', 'Mobile']],
             body: tableData,
             theme: 'grid',
             headStyles: { fillColor: [130, 29, 48] },
@@ -186,7 +186,7 @@ export default function AllUsers() {
                     <thead>
                         <tr>
                             <th>{t('common.serialNo')}</th>
-                            <th>Name</th>
+                            <th>Owner Name</th>
                             <th>GST ID</th>
                             <th>Block</th>
                             <th>Type</th>
@@ -284,129 +284,154 @@ export default function AllUsers() {
 
             {/* Profile Modal */}
             {showProfile && selectedUser && (
-                <div className="modal-overlay" onClick={() => setShowProfile(false)}>
-                    <div className="modal" style={{ maxWidth: 800 }} onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3>User Profile & Payment Analytics</h3>
-                            <button className="modal-close" onClick={() => setShowProfile(false)}>
-                                <FiX />
+                <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000 }} onClick={() => setShowProfile(false)}>
+                    <div
+                        className="modal"
+                        style={{ maxWidth: 900, width: '95%', borderRadius: 20, overflow: 'hidden', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="modal-header" style={{ padding: '20px 24px', background: 'white', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ background: 'var(--color-maroon)', color: 'white', padding: 8, borderRadius: 10 }}>
+                                    <FiUser size={20} />
+                                </div>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Business Profile Details</h3>
+                            </div>
+                            <button className="modal-close" style={{ background: '#f5f5f5', border: 'none', padding: 8, borderRadius: '50%', cursor: 'pointer', display: 'flex' }} onClick={() => setShowProfile(false)}>
+                                <FiX size={18} />
                             </button>
                         </div>
 
-                        <div className="modal-body" style={{ padding: '0 24px 24px' }}>
-                            <div className="profile-grid" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 32 }}>
-                                {/* Left Side: Photos & Basic Actions */}
-                                <div className="profile-sidebar">
-                                    <div className="card" style={{ padding: 20, textAlign: 'center', marginBottom: 20, borderRadius: 12, border: '1px solid var(--border-color)' }}>
-                                        <div className="profile-photo-large" style={{ width: 100, height: 100, borderRadius: '50%', background: 'var(--bg-secondary)', margin: '0 auto 16px', border: '3px solid var(--color-maroon-light)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            {selectedUser.user_photo_url ? (
-                                                <img src={selectedUser.user_photo_url} alt="User" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            ) : (
-                                                <FiUser size={40} color="var(--text-muted)" />
-                                            )}
+                        <div className="modal-body" style={{ padding: 0 }}>
+                            <div className="profile-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 30%) 1fr', minHeight: 500 }}>
+                                {/* Left Side: Professional Profile Card */}
+                                <div className="profile-sidebar" style={{ background: '#fafafa', padding: 24, borderRight: '1px solid #eee' }}>
+                                    <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                                        <div style={{ position: 'relative', width: 120, height: 120, margin: '0 auto 16px' }}>
+                                            <div style={{ width: 120, height: 120, borderRadius: 24, background: 'white', boxShadow: '0 10px 20px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '2px solid white' }}>
+                                                {selectedUser.user_photo_url ? (
+                                                    <img src={selectedUser.user_photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <span style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--color-maroon)' }}>
+                                                        {(selectedUser.username || selectedUser.name || 'U').charAt(0).toUpperCase()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div style={{ position: 'absolute', bottom: -8, right: -8, background: selectedUser.is_verified ? '#22c55e' : '#eab308', color: 'white', width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '3px solid #fafafa' }}>
+                                                {selectedUser.is_verified ? <FiCheckCircle size={14} /> : <FiAlertCircle size={14} />}
+                                            </div>
                                         </div>
-                                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem' }}>{selectedUser.username || selectedUser.name}</h4>
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: 12 }}>GST ID: {selectedUser.gst_id || selectedUser.gst}</p>
-                                        <span className={`badge badge-${selectedUser.is_verified ? 'success' : 'warning'}`} style={{ fontSize: '0.7rem' }}>
-                                            {selectedUser.is_verified ? 'Verified Shop' : 'Pending Verification'}
-                                        </span>
+                                        <h4 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px 0', color: '#1a1a1a' }}>{selectedUser.username || selectedUser.name}</h4>
+                                        <p style={{ fontSize: '0.8rem', color: '#666', fontFamily: 'monospace', letterSpacing: '0.5px' }}>{selectedUser.gst_id || selectedUser.gst || 'NO GST'}</p>
+                                        <div style={{ marginTop: 12, padding: '6px 16px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600, display: 'inline-block', background: selectedUser.is_verified ? '#dcfce7' : '#fef9c3', color: selectedUser.is_verified ? '#166534' : '#854d0e' }}>
+                                            {selectedUser.is_verified ? 'ACTIVE TAXPAYER' : 'PENDING APPROVAL'}
+                                        </div>
                                     </div>
 
-                                    <div className="shop-photo" style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border-color)', marginBottom: 20 }}>
-                                        <p style={{ margin: '8px', fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Shop Front</p>
+                                    <div style={{ background: 'white', borderRadius: 16, padding: 12, boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
+                                        <p style={{ margin: '0 0 8px 4px', fontSize: '0.65rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' }}>Shop Establishment Image</p>
                                         {selectedUser.shop_photo_url ? (
-                                            <img src={selectedUser.shop_photo_url} alt="Shop" style={{ width: '100%', height: 140, objectFit: 'cover' }} />
+                                            <img src={selectedUser.shop_photo_url} alt="Shop" style={{ width: '100%', height: 150, borderRadius: 12, objectFit: 'cover' }} />
                                         ) : (
-                                            <div style={{ height: 140, background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>No Shop Photo</div>
+                                            <div style={{ height: 150, background: '#f8f8f8', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#ccc', border: '2px dashed #eee' }}>
+                                                <FiBriefcase size={24} />
+                                                <span style={{ fontSize: '0.7rem', marginTop: 8 }}>No photo uploaded</span>
+                                            </div>
                                         )}
-                                    </div>
-                                    <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: 8, textAlign: 'center', fontSize: '0.8rem', color: '#666' }}>
-                                        Registered User Details
                                     </div>
                                 </div>
 
                                 {/* Right Side: Tabs / Details */}
-                                <div className="profile-main">
+                                <div className="profile-main" style={{ padding: 24, overflowY: 'auto', maxHeight: '75vh' }}>
+                                    {/* Stats Grid */}
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
-                                        <div className="stat-card" style={{ padding: 16, background: '#f8fff8', border: '1px solid #e0f0e0', borderRadius: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
-                                            <div className="stat-icon" style={{ background: '#e8f5e9', color: '#2e7d32', padding: 10, borderRadius: 10 }}><FiCheckCircle /></div>
+                                        <div style={{ padding: 20, borderRadius: 16, background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', border: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', gap: 16 }}>
+                                            <div style={{ background: '#22c55e', color: 'white', padding: 10, borderRadius: 12 }}><FiCheckCircle size={20} /></div>
                                             <div>
-                                                <h3 style={{ margin: 0, fontSize: '1.3rem' }}>₹{selectedUser.payments?.filter(p => p.status === 'success' || p.status === 'captured').reduce((sum, p) => sum + Number(p.amount), 0) || 0}</h3>
-                                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Total Tax Paid</p>
+                                                <div style={{ fontSize: '0.75rem', color: '#166534', fontWeight: 600 }}>Total Collected</div>
+                                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#166534' }}>₹{selectedUser.payments?.filter(p => p.status === 'success' || p.status === 'captured').reduce((sum, p) => sum + Number(p.amount), 0) || 0}</div>
                                             </div>
                                         </div>
-                                        <div className="stat-card" style={{ padding: 16, background: ((selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? '#fff8f8' : '#f8fff8'), border: '1px solid #f0e0e0', borderRadius: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
-                                            <div className="stat-icon" style={{ background: ((selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? '#ffebee' : '#e8f5e9'), color: ((selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? '#c62828' : '#2e7d32'), padding: 10, borderRadius: 10 }}>
-                                                {(selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? <FiAlertCircle /> : <FiCheckCircle />}
+                                        <div style={{ padding: 20, borderRadius: 16, background: ((selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? 'linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%)' : 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)'), border: ((selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? '1px solid #fecdd3' : '1px solid #bbf7d0'), display: 'flex', alignItems: 'center', gap: 16 }}>
+                                            <div style={{ background: ((selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? '#ef4444' : '#22c55e'), color: 'white', padding: 10, borderRadius: 12 }}>
+                                                {(selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? <FiAlertCircle size={20} /> : <FiCheckCircle size={20} />}
                                             </div>
                                             <div>
-                                                <h3 style={{ margin: 0, fontSize: '1.3rem', color: ((selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? '#c62828' : '#2e7d32') }}>
-                                                    {(selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? 'Due' : 'Paid'}
-                                                </h3>
-                                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Current Status</p>
+                                                <div style={{ fontSize: '0.75rem', color: ((selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? '#991b1b' : '#166534'), fontWeight: 600 }}>Tax Compliance</div>
+                                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: ((selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? '#991b1b' : '#166534') }}>
+                                                    {(selectedUser.taxes?.some(t => t.status === 'unpaid') || selectedUser.monthly_taxes?.some(t => t.status === 'pending')) ? 'DUE' : 'PAID'}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="details-section" style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: 20 }}>
-                                        <h5 style={{ margin: '0 0 16px 0', paddingBottom: 10, borderBottom: '1px solid #eee' }}>Registration Information</h5>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
-                                            <div className="info-item">
-                                                <label style={{ fontSize: '0.7rem', color: '#999', display: 'block', marginBottom: 2 }}>Owner Name</label>
-                                                <strong>{selectedUser.father_name || 'N/A'}</strong>
-                                            </div>
-                                            <div className="info-item">
-                                                <label style={{ fontSize: '0.7rem', color: '#999', display: 'block', marginBottom: 2 }}>Phone</label>
-                                                <strong>{selectedUser.mobile || 'N/A'}</strong>
-                                            </div>
-                                            <div className="info-item">
-                                                <label style={{ fontSize: '0.7rem', color: '#999', display: 'block', marginBottom: 2 }}>Email</label>
-                                                <strong>{selectedUser.email || 'N/A'}</strong>
-                                            </div>
-                                            <div className="info-item">
-                                                <label style={{ fontSize: '0.7rem', color: '#999', display: 'block', marginBottom: 2 }}>Category</label>
-                                                <span className="badge badge-info" style={{ display: 'inline-block' }}>{selectedUser.business_type || selectedUser.type}</span>
-                                            </div>
-                                            <div className="info-item">
-                                                <label style={{ fontSize: '0.7rem', color: '#999', display: 'block', marginBottom: 2 }}>District</label>
-                                                <strong>{selectedUser.district || 'N/A'}</strong>
-                                            </div>
-                                            <div className="info-item">
-                                                <label style={{ fontSize: '0.7rem', color: '#999', display: 'block', marginBottom: 2 }}>Block</label>
-                                                <strong>{selectedUser.block || 'N/A'}</strong>
-                                            </div>
+                                    {/* Registration Details */}
+                                    <div style={{ background: 'white', borderRadius: 20, border: '1px solid #f0f0f0', padding: 24, marginBottom: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+                                        <h5 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 20px 0', color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <FiBriefcase style={{ color: 'var(--color-maroon)' }} /> Business Information
+                                        </h5>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+                                            {[
+                                                { label: 'Owner Name', value: selectedUser.father_name || 'Not Provided', icon: <FiUser size={14} /> },
+                                                { label: 'Mobile No.', value: selectedUser.mobile || 'N/A', icon: <FiPhone size={14} /> },
+                                                { label: 'Official Email', value: selectedUser.email || 'N/A', icon: <FiMail size={14} /> },
+                                                { label: 'Category', value: selectedUser.business_type || selectedUser.type || 'N/A', icon: <FiBriefcase size={14} />, isBadge: true },
+                                                { label: 'District', value: selectedUser.district || 'N/A', icon: <FiMapPin size={14} /> },
+                                                { label: 'Block / Tehsil', value: selectedUser.block || 'N/A', icon: <FiMapPin size={14} /> }
+                                            ].map((item, id) => (
+                                                <div key={id}>
+                                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#999', margin: '0 0 6px 0', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                        {item.icon} {item.label}
+                                                    </div>
+                                                    {item.isBadge ? (
+                                                        <span style={{ fontSize: '0.85rem', fontWeight: 600, padding: '4px 10px', background: '#eff6ff', color: '#1e40af', borderRadius: 6, display: 'inline-block' }}>{item.value}</span>
+                                                    ) : (
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2d2d2d' }}>{item.value}</div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Recent Transactions */}
+                                    <div style={{ background: 'white', borderRadius: 20, border: '1px solid #f0f0f0', padding: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                                            <h5 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <FiClock style={{ color: 'var(--color-maroon)' }} /> Transaction Audit
+                                            </h5>
+                                            <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#666', background: '#f5f5f5', padding: '4px 12px', borderRadius: 20 }}>
+                                                {selectedUser.payments?.length || 0} Records
+                                            </span>
                                         </div>
 
-                                        <h5 style={{ margin: '24px 0 12px 0', paddingBottom: 10, borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <FiClock /> Payment History (Transactions)
-                                        </h5>
-                                        <div className="data-table-wrapper" style={{ maxHeight: 200, border: '1px solid #eee', borderRadius: 8 }}>
+                                        <div className="data-table-wrapper" style={{ border: 'none', background: 'transparent' }}>
                                             <table className="data-table" style={{ fontSize: '0.85rem' }}>
-                                                <thead>
+                                                <thead style={{ background: '#f8fafc' }}>
                                                     <tr>
-                                                        <th>T-ID</th>
-                                                        <th>Amount</th>
-                                                        <th>Gateway Status</th>
-                                                        <th>Date</th>
+                                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.7rem', color: '#64748b' }}>TRANSACTION ID</th>
+                                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.7rem', color: '#64748b' }}>AMOUNT</th>
+                                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.7rem', color: '#64748b' }}>STATUS</th>
+                                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.7rem', color: '#64748b' }}>DATE</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {selectedUser.payments && selectedUser.payments.length > 0 ? (
                                                         [...selectedUser.payments].sort((a, b) => new Date(b.paid_at) - new Date(a.paid_at)).map((pay, idx) => (
-                                                            <tr key={idx}>
-                                                                <td style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#777' }}>{pay.transaction_id || pay.id.substring(0, 8)}</td>
-                                                                <td><strong style={{ color: '#2e7d32' }}>₹{pay.amount}</strong></td>
-                                                                <td>
-                                                                    <span className={`badge badge-${pay.status === 'success' || pay.status === 'captured' ? 'success' : 'danger'}`} style={{ fontSize: '0.65rem' }}>
+                                                            <tr key={idx} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                                                <td style={{ padding: '12px 16px', fontFamily: 'monospace', color: '#666' }}>{pay.transaction_id || pay.id.substring(0, 10)}</td>
+                                                                <td style={{ padding: '12px 16px' }}><strong style={{ color: '#166534' }}>₹{pay.amount}</strong></td>
+                                                                <td style={{ padding: '12px 16px' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: '0.7rem', color: (pay.status === 'success' || pay.status === 'captured') ? '#22c55e' : '#ef4444' }}>
+                                                                        {(pay.status === 'success' || pay.status === 'captured') ? <FiCheckCircle size={12} /> : <FiAlertCircle size={12} />}
                                                                         {pay.status?.toUpperCase()}
-                                                                    </span>
+                                                                    </div>
                                                                 </td>
-                                                                <td>{pay.paid_at ? new Date(pay.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</td>
+                                                                <td style={{ padding: '12px 16px', color: '#666' }}>{pay.paid_at ? new Date(pay.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '-'}</td>
                                                             </tr>
                                                         ))
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan="4" style={{ textAlign: 'center', padding: '16px', color: '#999' }}>No successful transactions found</td>
+                                                            <td colSpan="4" style={{ textAlign: 'center', padding: '32px', color: '#cbd5e1', fontStyle: 'italic' }}>No successfull transactions found in ledger</td>
                                                         </tr>
                                                     )}
                                                 </tbody>

@@ -1,4 +1,0 @@
-[Health Check] Table users has 29 records.
-[Health Check] Table taxes has 17 records.
-[Health Check] Table monthly_taxes has 156 records.
-[Health Check] Table payments has 31 records.

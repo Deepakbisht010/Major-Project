@@ -3,8 +3,9 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import LanguageToggle from './LanguageToggle'
-import { FiMenu, FiX, FiUser, FiLogOut, FiEdit, FiHome } from 'react-icons/fi'
+import { FiMenu, FiX, FiUser, FiLogOut, FiEdit, FiHome, FiShield, FiHelpCircle, FiMessageCircle } from 'react-icons/fi'
 import logo from '../assets/logo.png'
+import { motion } from 'framer-motion'
 
 export default function Navbar({ variant = 'landing' }) {
     const { t } = useTranslation()
@@ -66,11 +67,24 @@ export default function Navbar({ variant = 'landing' }) {
 
                 {variant === 'landing' && (
                     <div className="navbar-links">
-                        <button className="nav-link" onClick={() => scrollToSection('home')}>{t('nav.home')}</button>
-                        <button className="nav-link" onClick={() => scrollToSection('about')}>{t('nav.about')}</button>
-                        <button className="nav-link" onClick={() => scrollToSection('help')}>{t('nav.help')}</button>
-                        <button className="nav-link" onClick={() => scrollToSection('complaints')}>{t('nav.complaints')}</button>
-                        <button className="nav-link" onClick={() => scrollToSection('team')}>{t('nav.aboutUs')}</button>
+                        {[
+                            { id: 'home', label: 'nav.home' },
+                            { id: 'about', label: 'nav.about' },
+                            { id: 'help', label: 'nav.help' },
+                            { id: 'complaints', label: 'nav.complaints' },
+                            { id: 'team', label: 'nav.aboutUs' }
+                        ].map((item, i) => (
+                            <motion.button
+                                key={item.id}
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 + i * 0.1, duration: 0.5 }}
+                                className="nav-link"
+                                onClick={() => scrollToSection(item.id)}
+                            >
+                                {t(item.label)}
+                            </motion.button>
+                        ))}
                     </div>
                 )}
 
@@ -87,8 +101,11 @@ export default function Navbar({ variant = 'landing' }) {
                     ) : (
                         <div className="profile-dropdown">
                             <button className="profile-trigger" onClick={() => setProfileOpen(!profileOpen)}>
-                                <div className="profile-avatar">
-                                    {user.username?.charAt(0).toUpperCase()}
+                                <div className="profile-avatar" style={{ padding: 0, overflow: 'hidden', background: (user.photoUrl || user.photo_url) ? 'transparent' : undefined }}>
+                                    {(user.photoUrl || user.photo_url)
+                                        ? <img src={user.photoUrl || user.photo_url} alt={user.username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                                        : user.username?.charAt(0).toUpperCase()
+                                    }
                                 </div>
                                 <span className="desktop-only" style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>
                                     {user.username?.split(' ')[0]}
@@ -141,10 +158,20 @@ export default function Navbar({ variant = 'landing' }) {
                             <h4 style={{ color: 'var(--color-maroon)' }}>E-TaxPay</h4>
                         </div>
 
-                        <button className="mobile-nav-link" onClick={() => { setMobileOpen(false); scrollToSection('home'); }}>{t('nav.home')}</button>
-                        <button className="mobile-nav-link" onClick={() => { setMobileOpen(false); scrollToSection('about'); }}>{t('nav.about')}</button>
-                        <button className="mobile-nav-link" onClick={() => { setMobileOpen(false); scrollToSection('help'); }}>{t('nav.help')}</button>
-                        <button className="mobile-nav-link" onClick={() => { setMobileOpen(false); scrollToSection('complaints'); }}>{t('nav.complaints')}</button>
+                        <div className="mobile-nav-links">
+                            <button className="mobile-nav-item" onClick={() => { setMobileOpen(false); scrollToSection('home'); }}>
+                                <FiHome size={20} /> {t('nav.home')}
+                            </button>
+                            <button className="mobile-nav-item" onClick={() => { setMobileOpen(false); scrollToSection('about'); }}>
+                                <FiShield size={20} /> {t('nav.about')}
+                            </button>
+                            <button className="mobile-nav-item" onClick={() => { setMobileOpen(false); scrollToSection('help'); }}>
+                                <FiHelpCircle size={20} /> {t('nav.help')}
+                            </button>
+                            <button className="mobile-nav-item" onClick={() => { setMobileOpen(false); scrollToSection('complaints'); }}>
+                                <FiMessageCircle size={20} /> {t('nav.complaints')}
+                            </button>
+                        </div>
 
                         <div className="mobile-menu-footer">
                             <LanguageToggle />

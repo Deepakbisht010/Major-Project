@@ -3,6 +3,8 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
+import { NotificationProvider } from '../../context/NotificationContext'
+
 export default function UserLayout() {
     const { user } = useAuth()
     const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -19,7 +21,7 @@ export default function UserLayout() {
     }, [])
 
     return (
-        <div>
+        <NotificationProvider userRole="user">
             <Navbar variant="panel" />
             <div className="panel-layout">
                 <Sidebar type="user" isOpen={sidebarOpen} />
@@ -70,6 +72,6 @@ export default function UserLayout() {
                     </div>
                 </main>
             </div>
-        </div>
+        </NotificationProvider>
     )
 }

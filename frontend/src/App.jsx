@@ -20,6 +20,8 @@ import GovUpdates from './pages/user/GovUpdates'
 // Admin Panel
 import AdminLayout from './pages/admin/AdminLayout'
 import Dashboard from './pages/admin/Dashboard'
+import AdminProfile from './pages/admin/AdminProfile'
+import AdminCollaboration from './pages/admin/AdminCollaboration'
 import AllUsers from './pages/admin/AllUsers'
 import TaxAnalytics from './pages/admin/TaxAnalytics'
 import NoticeGeneration from './pages/admin/NoticeGeneration'
@@ -57,12 +59,14 @@ function AppRoutes() {
                 </ProtectedRoute>
             }>
                 <Route index element={<Dashboard />} />
+                <Route path="profile" element={<AdminProfile />} />
                 <Route path="users" element={<AllUsers />} />
                 <Route path="analytics" element={<TaxAnalytics />} />
                 <Route path="notices" element={<NoticeGeneration />} />
                 <Route path="complaints" element={<ComplaintManagement />} />
                 <Route path="audit" element={<AuditLogs />} />
                 <Route path="updates" element={<GovUpdatesAdmin />} />
+                <Route path="collaboration" element={<AdminCollaboration />} />
             </Route>
 
             {/* Catch-all */}
@@ -79,11 +83,54 @@ function LanguageBodyEffect() {
     return null
 }
 
+function ScrollRevealEffect() {
+    useEffect(() => {
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                } else {
+                    // Repeat animation by removing class when out of view
+                    entry.target.classList.remove('visible');
+                }
+            });
+        }, observerOptions);
+
+        // Function to observe all current .reveal elements
+        const observeElements = () => {
+            const revealElements = document.querySelectorAll('.reveal, .reveal-scale, .reveal-left');
+            revealElements.forEach(el => observer.observe(el));
+        };
+
+        observeElements();
+
+        // Re-observe if content changes (Dynamic data loading)
+        const mutationObserver = new MutationObserver(() => {
+            observeElements();
+        });
+
+        mutationObserver.observe(document.body, { childList: true, subtree: true });
+
+        return () => {
+            observer.disconnect();
+            mutationObserver.disconnect();
+        };
+    }, []);
+
+    return null
+}
+
 export default function App() {
     return (
         <AuthProvider>
             <Router>
                 <LanguageBodyEffect />
+                <ScrollRevealEffect />
                 <AppRoutes />
             </Router>
         </AuthProvider>

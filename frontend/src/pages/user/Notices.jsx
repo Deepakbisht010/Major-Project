@@ -1,39 +1,36 @@
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiDownload, FiAlertCircle } from 'react-icons/fi'
+import { FiDownload, FiAlertCircle, FiInfo } from 'react-icons/fi'
 import jsPDF from 'jspdf'
-
-const notices = [
-    {
-        id: 1,
-        title: 'Tax Payment Reminder',
-        message: 'You have not paid tax for January 2026. Please pay within 7 days to avoid additional penalty.',
-        date: '2026-02-15',
-        urgent: true,
-        month: 'January',
-        year: 2026
-    },
-    {
-        id: 2,
-        title: 'Updated Tax Rate Notification',
-        message: 'Please note that the shop tax rate for General Stores has been revised from ₹500 to ₹550 effective April 2026.',
-        date: '2026-02-10',
-        urgent: false,
-        month: '',
-        year: 2026
-    },
-    {
-        id: 3,
-        title: 'Annual Tax Assessment',
-        message: 'Your annual tax assessment for the year 2025 is complete. Please review your records and ensure all dues are cleared.',
-        date: '2026-01-20',
-        urgent: false,
-        month: '',
-        year: 2025
-    },
-]
+import api from '../../lib/api'
+import { useNotifications } from '../../context/NotificationContext'
 
 export default function Notices() {
     const { t } = useTranslation()
+    const [notices, setNotices] = useState([])
+    const [loading, setLoading] = useState(true)
+    const notifications = useNotifications()
+
+    const fetchNotices = async () => {
+        try {
+            const response = await api.get('taxpayers/notices');
+            if (response.data.success) {
+                setNotices(response.data.notices || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch notices:', error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        // Clear notices badge on page open
+        if (notifications?.markNoticesRead) {
+            notifications.markNoticesRead()
+        }
+        fetchNotices();
+    }, []);
 
     const downloadNotice = (notice) => {
         const doc = new jsPDF()
@@ -46,10 +43,10 @@ export default function Notices() {
 
         doc.setTextColor(45, 45, 45)
         doc.setFontSize(12)
-        doc.text(notice.title, 14, 45)
+        doc.text(notice.title || 'Official Notice', 14, 45)
         doc.setFontSize(9)
         doc.setTextColor(100, 100, 100)
-        doc.text(`Date: ${new Date(notice.date).toLocaleDateString('en-IN')}`, 14, 55)
+        doc.text(`Date: ${new Date(notice.created_at).toLocaleDateString('en-IN')}`, 14, 55)
 
         doc.setTextColor(45, 45, 45)
         doc.setFontSize(10)
@@ -63,6 +60,13 @@ export default function Notices() {
         doc.save(`notice-${notice.id}.pdf`)
     }
 
+    if (loading) return (
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+            <div className="spinner"></div>
+            <p>Loading your notices...</p>
+        </div>
+    );
+
     return (
         <div>
             <div className="page-header">
@@ -71,29 +75,34 @@ export default function Notices() {
             </div>
 
             {notices.length === 0 ? (
-                <div className="empty-state">
-                    <div className="icon">📋</div>
+                <div className="empty-state" style={{ padding: '80px 0' }}>
+                    <div className="icon" style={{ fontSize: '3rem', marginBottom: 20 }}>📋</div>
                     <h4>{t('user.noNotices')}</h4>
+                    <p style={{ color: '#999' }}>You have no official notices at this time.</p>
                 </div>
             ) : (
-                notices.map(notice => (
-                    <div key={notice.id} className={`notice-card ${notice.urgent ? 'urgent' : ''}`}>
-                        <div className="notice-header">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                {notice.urgent && <FiAlertCircle color="var(--color-maroon)" size={18} />}
-                                <h4>{notice.title}</h4>
+                <div className="notices-list">
+                    {notices.map(notice => (
+                        <div key={notice.id} className={`notice-card reveal ${notice.urgent ? 'urgent' : ''}`}>
+                            <div className="notice-header">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    {notice.urgent ? <FiAlertCircle color="var(--color-maroon)" size={18} /> : <FiInfo color="var(--color-primary)" size={18} />}
+                                    <h4>{notice.title}</h4>
+                                </div>
+                                <span className="notice-date">{new Date(notice.created_at).toLocaleDateString('en-IN')}</span>
                             </div>
-                            <span className="notice-date">{new Date(notice.date).toLocaleDateString('en-IN')}</span>
+                            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 14, fontSize: '0.9rem', whiteSpace: 'pre-line' }}>
+                                {notice.message}
+                            </p>
+                            <div style={{ display: 'flex', gap: 10 }}>
+                                <button className="btn btn-secondary btn-sm" onClick={() => downloadNotice(notice)}>
+                                    <FiDownload size={14} /> {t('user.downloadPdf')}
+                                </button>
+                            </div>
                         </div>
-                        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 14, fontSize: '0.9rem' }}>
-                            {notice.message}
-                        </p>
-                        <button className="btn btn-secondary btn-sm" onClick={() => downloadNotice(notice)}>
-                            <FiDownload size={14} /> {t('user.downloadPdf')}
-                        </button>
-                    </div>
-                ))
+                    ))}
+                </div>
             )}
         </div>
-    )
+    );
 }

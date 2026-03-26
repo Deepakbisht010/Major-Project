@@ -1,36 +1,8 @@
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiGlobe } from 'react-icons/fi'
-
-const updates = [
-    {
-        id: 1,
-        title: 'New Tax Rates for FY 2026-27',
-        content: 'The Uttarakhand State Government has announced revised shop tax rates effective from April 2026. General stores will see a 10% increase while medical stores remain unchanged.',
-        date: '2026-02-20',
-        category: 'Tax Update'
-    },
-    {
-        id: 2,
-        title: 'Digital Payment Incentive Scheme',
-        content: 'Shops making all tax payments digitally through E-TaxPay will receive a 5% discount on annual tax. This scheme is valid for FY 2026-27.',
-        date: '2026-02-15',
-        category: 'Scheme'
-    },
-    {
-        id: 3,
-        title: 'Extension of Tax Payment Deadline',
-        content: 'Due to inclement weather conditions in Kumaon region, the tax payment deadline for January 2026 has been extended by 15 days for Almora, Bageshwar, and Pithoragarh districts.',
-        date: '2026-02-05',
-        category: 'Notice'
-    },
-    {
-        id: 4,
-        title: 'Zila Panchayat Meeting - Tax Collection Review',
-        content: 'A review meeting on digital tax collection progress will be held on March 1, 2026 at the Zila Panchayat office, Almora. All block-level officers are required to attend.',
-        date: '2026-01-28',
-        category: 'Announcement'
-    },
-]
+import { FiGlobe, FiClock } from 'react-icons/fi'
+import api from '../../lib/api'
+import { useNotifications } from '../../context/NotificationContext'
 
 const categoryColors = {
     'Tax Update': 'var(--color-maroon)',
@@ -41,36 +13,70 @@ const categoryColors = {
 
 export default function GovUpdates() {
     const { t } = useTranslation()
+    const [updates, setUpdates] = useState([])
+    const [loading, setLoading] = useState(true)
+    const notifications = useNotifications()
+
+    useEffect(() => {
+        // Mark gov updates as read as soon as user opens this page
+        if (notifications?.markGovUpdatesRead) {
+            notifications.markGovUpdatesRead()
+        }
+
+        const fetchUpdates = async () => {
+            try {
+                const res = await api.get('taxpayers/gov-updates');
+                if (res.data.success) {
+                    setUpdates(res.data.updates || []);
+                }
+            } catch (error) {
+                console.error("Failed to fetch government updates:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchUpdates();
+    }, []);
+
+    if (loading) return (
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+            <div className="spinner"></div>
+            <p>Fetching latest government notifications...</p>
+        </div>
+    );
 
     return (
         <div>
             <div className="page-header">
                 <h2>{t('user.govUpdates')}</h2>
-                <p>Stay informed with latest government notifications and updates</p>
+                <p>Official circulars and notifications for your registered location</p>
             </div>
 
             {updates.length === 0 ? (
-                <div className="empty-state">
-                    <div className="icon"><FiGlobe size={48} /></div>
-                    <h4>{t('user.noUpdates')}</h4>
+                <div className="card" style={{ textAlign: 'center', padding: '100px 20px', color: '#999' }}>
+                    <div style={{ fontSize: '3rem', marginBottom: 20 }}>📬</div>
+                    <h4>No New Notifications</h4>
+                    <p>You are all caught up. Check back later for new government updates.</p>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gap: 16 }}>
                     {updates.map(update => (
-                        <div key={update.id} className="update-card">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <div key={update.id} className="update-card reveal" style={{ borderLeft: `5px solid ${categoryColors[update.category] || '#ccc'}` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                                 <span className="badge" style={{
-                                    background: `${categoryColors[update.category]}15`,
-                                    color: categoryColors[update.category]
+                                    background: `${categoryColors[update.category] || '#eee'}15`,
+                                    color: categoryColors[update.category] || '#666',
+                                    fontWeight: 600
                                 }}>
                                     {update.category}
                                 </span>
-                                <span className="update-date" style={{ marginBottom: 0 }}>
-                                    {new Date(update.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                                    <FiClock size={12} />
+                                    {new Date(update.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </div>
                             </div>
-                            <h4>{update.title}</h4>
-                            <p>{update.content}</p>
+                            <h4 style={{ marginBottom: 10, color: 'var(--color-maroon)' }}>{update.title}</h4>
+                            <p style={{ lineHeight: 1.6, color: '#444' }}>{update.content}</p>
                         </div>
                     ))}
                 </div>

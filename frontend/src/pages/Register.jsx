@@ -51,19 +51,27 @@ export default function Register() {
 
     const updateForm = (key, val) => setForm(prev => ({ ...prev, [key]: val }))
 
+    const [generatedOtp, setGeneratedOtp] = useState('')
+
     const sendOtp = () => {
-        if (!form.mobile || form.mobile.length < 10) { setError('Enter valid mobile number'); return }
-        setOtpSent(true)
-        setError('')
-        alert(t('auth.otpSent') + ' (Demo OTP: 123456)')
+        if (!form.mobile || form.mobile.length !== 10) {
+            setError('Enter a valid 10-digit mobile number');
+            return;
+        }
+        const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        setGeneratedOtp(newOtp);
+        setOtpSent(true);
+        setError('');
+        alert(t('auth.otpSent') + ` (Your OTP: ${newOtp})`);
+        setOtp(newOtp); // Auto-fill for convenience
     }
 
     const verifyOtp = () => {
-        if (otp === '123456') {
-            setOtpVerified(true)
-            setError('')
+        if (otp === generatedOtp) {
+            setOtpVerified(true);
+            setError('');
         } else {
-            setError('Invalid OTP')
+            setError('Invalid OTP');
         }
     }
 

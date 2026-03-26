@@ -6,7 +6,7 @@ import 'jspdf-autotable'
 import Papa from 'papaparse'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../context/AuthContext'
-
+import { useNotifications } from '../../context/NotificationContext'
 import api from '../../lib/api'
 
 export default function TaxTable() {
@@ -15,6 +15,7 @@ export default function TaxTable() {
     const [yearFilter, setYearFilter] = useState('')
     const [taxData, setTaxData] = useState([])
     const [loading, setLoading] = useState(true)
+    const notifications = useNotifications()
 
     const monthNames = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -45,6 +46,11 @@ export default function TaxTable() {
         };
 
         fetchTaxes();
+
+        // Clear unpaid tax badge once user visits this page
+        if (notifications?.markUnpaidRead) {
+            notifications.markUnpaidRead()
+        }
     }, [user]);
 
     const filtered = yearFilter ? taxData.filter(r => r.year === parseInt(yearFilter)) : taxData
@@ -95,8 +101,8 @@ export default function TaxTable() {
             </div>
 
             {/* Stats */}
-            <div className="grid-3" style={{ marginBottom: 24 }}>
-                <div className="stat-card">
+            <div className="grid-3 reveal-scale" style={{ marginBottom: 24 }}>
+                <div className="stat-card reveal-scale">
                     <div className="stat-icon" style={{ background: 'var(--color-green-light)', color: 'var(--color-green)' }}>
                         <FiCheckCircle size={22} />
                     </div>
@@ -105,7 +111,7 @@ export default function TaxTable() {
                         <p>{t('user.totalPaid')}</p>
                     </div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card reveal-scale">
                     <div className="stat-icon" style={{ background: 'var(--color-maroon-light)', color: 'var(--color-maroon)' }}>
                         <FiXCircle size={22} />
                     </div>
@@ -114,7 +120,7 @@ export default function TaxTable() {
                         <p>{t('user.totalPending')}</p>
                     </div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card reveal-scale">
                     <div className="stat-icon" style={{ background: 'rgba(232,134,58,0.15)', color: 'var(--color-saffron)' }}>
                         <FiAlertTriangle size={22} />
                     </div>
@@ -142,7 +148,7 @@ export default function TaxTable() {
             </div>
 
             {/* Table */}
-            <div className="data-table-wrapper">
+            <div className="data-table-wrapper reveal">
                 <table className="data-table">
                     <thead>
                         <tr>

@@ -28,10 +28,10 @@ const Chatbot = () => {
     useEffect(scrollToBottom, [messages]);
 
     const suggestions = [
-        { q: "How do I pay my tax?", a: "To pay your tax, login to your dashboard, go to the 'Tax Payments' section, and click on 'Pay Now' next to the outstanding month." },
-        { q: "How to file a complaint?", a: "You can file a complaint by scrolling to the 'Need Help?' section on the landing page or using the 'Complaints' tab in your user dashboard." },
-        { q: "Who is behind this project?", a: "This project is an initiative for the Digital Settlement of Trade Tax for the Uttarakhand Government, managed by the state tax department." },
-        { q: "How to contact support?", a: "You can reach us at deepakbisht4050@gmail.com or call us at +91 7300756458." }
+        { q: "How do I pay my tax?", a: "To pay your tax easily, follow these steps:\n* Login to your **Dashboard**.\n* Navigate to the **Tax Table** section.\n* Locate the month you want to pay.\n* Click the **Pay Now** button and complete the payment safely." },
+        { q: "How to file a complaint?", a: "If you face any issues, you can file a complaint:\n* Go to your **Dashboard**.\n* Click on the **Message/Complaint** icon.\n* Describe your issue clearly.\n* Our **Support Team** will review and resolve it within 24-48 hours." },
+        { q: "Who is behind this project?", a: "This project is a formal initiative of the **Government of Uttarakhand** for the digital settlement of trade taxes, ensuring transparency and ease of payment for all merchants." },
+        { q: "How to contact support?", a: "We are here to help you!\n* **Email**: support@etaxpay.gov.in\n* **Phone**: +91 73007-56458\n* **Available**: Mon-Sat (10 AM - 6 PM)" }
     ];
 
     const handleSend = async (text) => {
@@ -66,17 +66,68 @@ const Chatbot = () => {
         setMessages([{ text: "Hello! I am your E-TaxPay assistant. How can I help you today?", isBot: true }]);
     };
 
+    const formatMessage = (text) => {
+        if (!text) return null;
+
+        // Apply global formatting first
+        let formatted = text;
+
+        // Handle bold: **text**
+        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="chat-bold">$1</strong>');
+
+        // Highlight Currency (₹)
+        formatted = formatted.replace(/(₹\s?\d+([.,]\d+)?)/g, '<span class="chat-money">$1</span>');
+
+        // Highlight Key Tax Terms
+        formatted = formatted.replace(/(tax|payment|bill|outstanding|pending|paid|due|gst|registration|complaint|notice|support|dashboard)/gi, match => `<span class="chat-highlight">${match}</span>`);
+
+        // Handle line breaks and lists
+        const lines = formatted.split('\n');
+        const elements = [];
+        let listItems = [];
+
+        lines.forEach((line, i) => {
+            const trimmedLine = line.trim();
+            const listMatch = trimmedLine.match(/^([*\-]|\d+\.)\s+(.*)/);
+
+            if (listMatch) {
+                listItems.push(<li key={`li-${i}`} className="chat-list-item" dangerouslySetInnerHTML={{ __html: listMatch[2] }} />);
+            } else {
+                if (listItems.length > 0) {
+                    elements.push(<ul key={`ul-${i}`} className="chat-list" style={{ paddingLeft: '20px', margin: '8px 0' }}>{listItems}</ul>);
+                    listItems = [];
+                }
+                if (trimmedLine) {
+                    elements.push(<p key={`p-${i}`} style={{ marginBottom: '8px', lineHeight: '1.5' }} dangerouslySetInnerHTML={{ __html: trimmedLine }} />);
+                }
+            }
+        });
+
+        if (listItems.length > 0) {
+            elements.push(<ul key="ul-final" className="chat-list" style={{ paddingLeft: '20px', margin: '8px 0' }}>{listItems}</ul>);
+        }
+
+        return <div className="formatted-message">{elements}</div>;
+    };
+
     return (
         <div className="chatbot-container">
             {/* Floating Toggle Button */}
-            <button
-                className={`chat-toggle ${isOpen ? 'open' : ''}`}
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                {isOpen ? <FiX size={26} /> : <FiMessageSquare size={26} />}
-            </button>
-
-            <AnimatePresence>
+            <div className="chat-toggle-wrapper" style={{ position: 'relative' }}>
+                {!isOpen && (
+                    <>
+                        <div className="pulse-ring"></div>
+                        <div className="pulse-ring"></div>
+                    </>
+                )}
+                <button
+                    className={`chat-toggle ${isOpen ? 'open' : ''}`}
+                    onClick={() => setIsOpen(!isOpen)}
+                >
+                    {isOpen ? <FiX size={28} /> : <FiMessageSquare size={28} />}
+                </button>
+            </div>
+            (1)             <AnimatePresence>
                 {isOpen && (
                     <motion.div
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -86,16 +137,19 @@ const Chatbot = () => {
                     >
                         {/* Chat Header */}
                         <div className="chat-header">
-                            <div className="chat-header-info">
-                                <div className="chat-avatar">
+                            <div className="chat-header-info" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div className="chat-avatar" style={{ width: '45px', height: '45px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyItems: 'center', color: 'var(--color-maroon)', justifyContent: 'center', fontSize: '1.2rem' }}>
                                     <FiMessageSquare />
                                 </div>
                                 <div>
-                                    <h5>E-TaxPay Assistant</h5>
-                                    <span>SUPPORT</span>
+                                    <h5 style={{ margin: 0, color: 'white', fontWeight: 800, fontSize: '1.1rem' }}>E-TaxPay Assistant</h5>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span className="pulse-dot" style={{ width: '8px', height: '8px', background: '#4ade80', borderRadius: '50%' }}></span>
+                                        <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.75rem', fontWeight: 600 }}>ONLINE SUPPORT</span>
+                                    </div>
                                 </div>
                             </div>
-                            <button onClick={handleReset} className="reset-chat" title="Restart Chat">
+                            <button onClick={handleReset} className="reset-chat" title="Restart Chat" style={{ color: 'white', opacity: 0.8 }}>
                                 <FiRefreshCw />
                             </button>
                         </div>
@@ -104,7 +158,9 @@ const Chatbot = () => {
                         <div className="chat-body">
                             {messages.map((m, i) => (
                                 <div key={i} className={`chat-message ${m.isBot ? 'bot' : 'user'}`}>
-                                    <div className="message-content">{m.text}</div>
+                                    <div className="message-content">
+                                        {m.isBot ? formatMessage(m.text) : m.text}
+                                    </div>
                                 </div>
                             ))}
 
@@ -119,9 +175,19 @@ const Chatbot = () => {
                             {messages.length === 1 && (
                                 <div className="chat-suggestions-grid">
                                     {suggestions.map((s, i) => (
-                                        <ChatLink key={i} onClick={() => handleSend(s.q)}>
+                                        <motion.button
+                                            key={i}
+                                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                            transition={{ delay: 0.4 + i * 0.1 }}
+                                            whileHover={{ y: -3 }}
+                                            whileTap={{ scale: 0.97 }}
+                                            onClick={() => handleSend(s.q)}
+                                            className="chat-suggestion"
+                                        >
+                                            <FiHelpCircle size={14} style={{ color: 'var(--color-saffron)' }} />
                                             {s.q}
-                                        </ChatLink>
+                                        </motion.button>
                                     ))}
                                 </div>
                             )}

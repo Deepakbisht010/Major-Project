@@ -2,7 +2,7 @@ import uttarakhandMapImg from '../assets/uttarakhand-map.png'
 
 export default function UttarakhandMap() {
     return (
-        <div style={{
+        <div className="map-container reveal-scale" style={{
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',

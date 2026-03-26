@@ -1,70 +1,109 @@
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-
-const auditData = [
-    { id: 1, timestamp: '2026-02-27 19:45:00', action: 'User Login', performedBy: 'Rajesh Kumar', ip: '192.168.1.45', details: 'User logged in via GST ID' },
-    { id: 2, timestamp: '2026-02-27 19:30:00', action: 'Payment Made', performedBy: 'Priya Devi', ip: '192.168.1.102', details: 'Tax payment of ₹500 for Feb 2026' },
-    { id: 3, timestamp: '2026-02-27 18:15:00', action: 'Notice Generated', performedBy: 'Admin Officer', ip: '10.0.0.1', details: 'Notice sent to Mohan Lal for Jan 2026' },
-    { id: 4, timestamp: '2026-02-27 17:45:00', action: 'Complaint Updated', performedBy: 'Admin Officer', ip: '10.0.0.1', details: 'Complaint #2 status changed to Verified' },
-    { id: 5, timestamp: '2026-02-27 16:00:00', action: 'User Registration', performedBy: 'System', ip: '192.168.2.55', details: 'New user registered: Kiran Negi' },
-    { id: 6, timestamp: '2026-02-27 14:30:00', action: 'Payment Made', performedBy: 'Kamla Bisht', ip: '192.168.1.200', details: 'Tax payment of ₹600 for Jan 2026' },
-    { id: 7, timestamp: '2026-02-27 12:00:00', action: 'Gov Update Posted', performedBy: 'Admin Officer', ip: '10.0.0.1', details: 'New tax rates published for FY 2026-27' },
-    { id: 8, timestamp: '2026-02-26 22:00:00', action: 'Auto Penalty', performedBy: 'System', ip: 'System', details: 'Penalty applied for 355 overdue shops' },
-    { id: 9, timestamp: '2026-02-26 18:30:00', action: 'Admin Login', performedBy: 'Admin Officer', ip: '10.0.0.1', details: 'Admin logged in with 2FA' },
-    { id: 10, timestamp: '2026-02-26 09:00:00', action: 'Auto Tax Created', performedBy: 'System', ip: 'System', details: 'Monthly tax entries generated for Feb 2026' },
-]
+import { FiClock, FiUser, FiActivity, FiServer } from 'react-icons/fi'
+import api from '../../lib/api'
 
 const actionColors = {
     'User Login': '#4285F4',
     'Admin Login': '#821D30',
-    'Payment Made': '#5B9A59',
-    'Notice Generated': '#E8863A',
-    'Complaint Updated': '#D4712A',
-    'User Registration': '#4285F4',
-    'Gov Update Posted': '#5B9A59',
-    'Auto Penalty': '#821D30',
-    'Auto Tax Created': '#E8863A',
+    'Payment': '#5B9A59',
+    'Notice': '#E8863A',
+    'Complaint': '#D4712A',
+    'Registration': '#4285F4',
+    'Update': '#5B9A59',
+    'System': '#999',
 }
 
 export default function AuditLogs() {
     const { t } = useTranslation()
+    const [logs, setLogs] = useState([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchLogs = async () => {
+            try {
+                const response = await api.get('admin/audit-logs');
+                if (response.data.success) {
+                    setLogs(response.data.logs || []);
+                }
+            } catch (error) {
+                console.error("Failed to fetch audit logs:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchLogs();
+    }, []);
+
+    if (loading) return (
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+            <div className="spinner"></div>
+            <p>Gathering system audit history...</p>
+        </div>
+    );
 
     return (
         <div>
             <div className="page-header">
                 <h2>{t('admin.auditLogs')}</h2>
-                <p>Complete audit trail of all system actions</p>
+                <p>Real-time audit trail of all system actions and user activities <strong>performed today</strong></p>
             </div>
 
-            <div className="data-table-wrapper">
+            <div className="data-table-wrapper" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.05)', borderRadius: '16px', overflow: 'hidden' }}>
                 <table className="data-table">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th style={{ width: '50px' }}>#</th>
                             <th>{t('admin.timestamp')}</th>
                             <th>{t('admin.action')}</th>
                             <th>{t('admin.performedBy')}</th>
-                            <th>{t('admin.ipAddress')}</th>
                             <th>Details</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {auditData.map(log => (
-                            <tr key={log.id}>
-                                <td>{log.id}</td>
-                                <td style={{ fontSize: '0.82rem', fontFamily: 'monospace' }}>{log.timestamp}</td>
-                                <td>
-                                    <span className="badge" style={{
-                                        background: `${actionColors[log.action]}15`,
-                                        color: actionColors[log.action]
-                                    }}>
-                                        {log.action}
-                                    </span>
+                        {logs.length === 0 ? (
+                            <tr>
+                                <td colSpan="5" style={{ textAlign: 'center', padding: '100px 0', color: '#999' }}>
+                                    <FiServer size={40} style={{ opacity: 0.2, marginBottom: 15 }} />
+                                    <p>No system activity records found yet.</p>
                                 </td>
-                                <td><strong>{log.performedBy}</strong></td>
-                                <td style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--text-muted)' }}>{log.ip}</td>
-                                <td style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{log.details}</td>
                             </tr>
-                        ))}
+                        ) : (
+                            logs.map((log, index) => (
+                                <tr key={index} style={{ transition: 'background 0.2s hover' }}>
+                                    <td style={{ color: '#aaa', fontSize: '0.8rem' }}>{logs.length - index}</td>
+                                    <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem', color: '#555' }}>
+                                            <FiClock size={12} style={{ color: 'var(--color-maroon)', opacity: 0.6 }} />
+                                            {new Date(log.timestamp).toLocaleString('en-IN')}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className="badge" style={{
+                                            background: `${actionColors[log.type] || '#eee'}15`,
+                                            color: actionColors[log.type] || '#666',
+                                            fontWeight: 600,
+                                            padding: '4px 10px',
+                                            fontSize: '0.75rem'
+                                        }}>
+                                            {log.action}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <FiUser size={14} style={{ color: '#999' }} />
+                                            <strong style={{ fontSize: '0.88rem' }}>{log.performedBy}</strong>
+                                        </div>
+                                    </td>
+                                    <td style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <FiActivity size={14} style={{ color: '#eee' }} />
+                                            {log.details}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>

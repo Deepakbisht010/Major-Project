@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { FiUsers, FiCheckCircle, FiXCircle, FiDollarSign } from 'react-icons/fi'
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, LineChart, Line, Legend
+    PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area
 } from 'recharts'
 import api from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
@@ -13,29 +13,37 @@ import { supabase } from '../../lib/supabase'
 
 // Placeholder fallback data
 const fallbackBlockData = [
-    { name: 'Almora', paid: 45000, unpaid: 12000 },
-    { name: 'Hawalbagh', paid: 32000, unpaid: 8000 },
+    { name: 'Dehradun', paid: 65, unpaid: 15 },
+    { name: 'Haridwar', paid: 45, unpaid: 10 },
+    { name: 'Nainital', paid: 35, unpaid: 12 },
+    { name: 'Almora', paid: 25, unpaid: 8 },
 ]
 
 const fallbackShopTypeData = [
     { name: 'General', value: 35, color: '#E8863A' },
     { name: 'Medical', value: 20, color: '#5B9A59' },
+    { name: 'Restaurant', value: 25, color: '#821D30' },
+    { name: 'Others', value: 20, color: '#4285F4' },
 ]
 
 const fallbackMonthlyData = [
-    { month: 'Sep', amount: 120000 },
-    { month: 'Oct', amount: 135000 },
-    { month: 'Nov', amount: 128000 },
-    { month: 'Dec', amount: 142000 },
-    { month: 'Jan', amount: 155000 },
-    { month: 'Feb', amount: 98000 },
+    { month: 'Jul 25', amount: 85000 },
+    { month: 'Aug 25', amount: 92000 },
+    { month: 'Sep 25', amount: 110000 },
+    { month: 'Oct 25', amount: 135000 },
+    { month: 'Nov 25', amount: 128000 },
+    { month: 'Dec 25', amount: 142000 },
+    { month: 'Jan 26', amount: 155000 },
 ]
 
 const fallbackRecentPayments = [
-    { user: 'Rajesh Kumar', gst: '05AAAPZ2694Q1ZN', amount: 550, date: '27 Feb 2026', status: 'paid' },
-    { user: 'Priya Devi', gst: '05BBBPZ3584Q2YM', amount: 500, date: '26 Feb 2026', status: 'paid' },
-    { user: 'Mohan Lal', gst: '05CCCPZ4474Q3XN', amount: 500, date: '26 Feb 2026', status: 'paid' },
+    { user: 'Deepak Bisht', gst: '05AAAPZ2694Q1ZN', amount: 550, date: '27 Feb 2026', status: 'paid' },
+    { user: 'Manish Singh', gst: '05BBBPZ3584Q2YM', amount: 500, date: '26 Feb 2026', status: 'paid' },
+    { user: 'Raja Kumar', gst: '05CCCPZ4474Q3XN', amount: 500, date: '26 Feb 2026', status: 'paid' },
 ]
+
+const chartColors = ['#E8863A', '#5B9A59', '#821D30', '#4285F4', '#F4B400', '#DB4437', '#9C27B0', '#00BCD4'];
+
 
 
 
@@ -132,8 +140,8 @@ export default function Dashboard() {
 
 
             {/* Stat Cards */}
-            <div className="grid-4" style={{ marginBottom: 28 }}>
-                <div className="stat-card">
+            <div className="grid-4 reveal-scale" style={{ marginBottom: 28 }}>
+                <div className="stat-card reveal-scale">
                     <div className="stat-icon" style={{ background: 'rgba(66,133,244,0.1)', color: '#4285F4' }}>
                         <FiUsers size={22} />
                     </div>
@@ -142,7 +150,7 @@ export default function Dashboard() {
                         <p>{t('admin.totalShops')}</p>
                     </div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card reveal-scale" style={{ transitionDelay: '0.1s' }}>
                     <div className="stat-icon" style={{ background: 'var(--color-green-light)', color: 'var(--color-green)' }}>
                         <FiCheckCircle size={22} />
                     </div>
@@ -151,7 +159,7 @@ export default function Dashboard() {
                         <p>{t('admin.paidShops')}</p>
                     </div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card reveal-scale" style={{ transitionDelay: '0.2s' }}>
                     <div className="stat-icon" style={{ background: 'var(--color-maroon-light)', color: 'var(--color-maroon)' }}>
                         <FiXCircle size={22} />
                     </div>
@@ -161,7 +169,7 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                <div className="stat-card">
+                <div className="stat-card reveal-scale" style={{ transitionDelay: '0.3s' }}>
                     <div className="stat-icon" style={{ background: 'rgba(232,134,58,0.15)', color: 'var(--color-saffron)' }}>
                         <FiDollarSign size={22} />
                     </div>
@@ -174,11 +182,11 @@ export default function Dashboard() {
 
 
             {/* Charts Row */}
-            <div className="grid-2" style={{ marginBottom: 28 }}>
-                <div className="chart-card">
+            <div className="grid-2 reveal" style={{ marginBottom: 28 }}>
+                <div className="chart-card reveal-left">
                     <h4>{t('admin.blockWise')}</h4>
                     <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={metrics.blockData || []}>
+                        <BarChart data={metrics.blockData && metrics.blockData.length > 0 ? metrics.blockData : fallbackBlockData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D5" />
                             <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                             <YAxis tick={{ fontSize: 11 }} />
@@ -198,7 +206,7 @@ export default function Dashboard() {
                     <ResponsiveContainer width="100%" height={280}>
                         <PieChart>
                             <Pie
-                                data={metrics.shopTypeData && metrics.shopTypeData.length > 0 ? metrics.shopTypeData : [{ name: 'None', value: 100, color: '#eee' }]}
+                                data={metrics.shopTypeData && metrics.shopTypeData.length > 0 ? metrics.shopTypeData : fallbackShopTypeData}
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={60}
@@ -207,8 +215,8 @@ export default function Dashboard() {
                                 dataKey="value"
                                 label={({ name, value }) => `${name} (${value}%)`}
                             >
-                                {(metrics.shopTypeData || []).map((entry, i) => (
-                                    <Cell key={i} fill={entry.color} />
+                                {(metrics.shopTypeData && metrics.shopTypeData.length > 0 ? metrics.shopTypeData : fallbackShopTypeData).map((entry, i) => (
+                                    <Cell key={i} fill={entry.color || chartColors[i % chartColors.length]} />
                                 ))}
                             </Pie>
                             <Tooltip />
@@ -218,17 +226,52 @@ export default function Dashboard() {
             </div>
 
 
-            <div className="grid-2" style={{ marginBottom: 28 }}>
-                <div className="chart-card">
+            <div className="grid-2 reveal" style={{ marginBottom: 28 }}>
+                <div className="chart-card reveal-left">
                     <h4>{t('admin.monthlyGrowth')}</h4>
                     <ResponsiveContainer width="100%" height={260}>
-                        <LineChart data={metrics.monthlyData && metrics.monthlyData.length > 0 ? metrics.monthlyData : fallbackMonthlyData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D5" />
-                            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                            <YAxis tick={{ fontSize: 11 }} />
-                            <Tooltip formatter={(value) => [`₹${value.toLocaleString()}`, 'Collection']} />
-                            <Line type="monotone" dataKey="amount" stroke="#821D30" strokeWidth={3} dot={{ fill: '#821D30', r: 5 }} />
-                        </LineChart>
+                        <AreaChart data={metrics.monthlyData && metrics.monthlyData.length > 0 ? metrics.monthlyData : fallbackMonthlyData}>
+                            <defs>
+                                <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#821D30" stopOpacity={0.25} />
+                                    <stop offset="95%" stopColor="#821D30" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D5" vertical={false} />
+                            <XAxis
+                                dataKey="month"
+                                tick={{ fontSize: 11, fill: '#8A8A8A' }}
+                                axisLine={{ stroke: '#E5E0D5' }}
+                                tickLine={false}
+                            />
+                            <YAxis
+                                tick={{ fontSize: 11, fill: '#8A8A8A' }}
+                                axisLine={false}
+                                tickLine={false}
+                                tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`}
+                            />
+                            <Tooltip
+                                contentStyle={{
+                                    borderRadius: '12px',
+                                    border: 'none',
+                                    boxShadow: '0 10px 25px rgba(130, 29, 48, 0.15)',
+                                    padding: '12px'
+                                }}
+                                formatter={(value) => [`₹${value.toLocaleString()}`, 'Total Revenue']}
+                                labelStyle={{ fontWeight: 700, color: '#821D30', marginBottom: '4px' }}
+                            />
+                            <Area
+                                type="monotone"
+                                dataKey="amount"
+                                stroke="#821D30"
+                                strokeWidth={4}
+                                fillOpacity={1}
+                                fill="url(#colorAmount)"
+                                animationDuration={2000}
+                                activeDot={{ r: 8, strokeWidth: 0, fill: '#E8863A' }}
+                                dot={{ fill: '#821D30', r: 4, strokeWidth: 2, stroke: '#fff' }}
+                            />
+                        </AreaChart>
                     </ResponsiveContainer>
                 </div>
 
@@ -239,7 +282,7 @@ export default function Dashboard() {
                         <table className="data-table">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
+                                    <th>Owner Name</th>
                                     <th>Amount</th>
                                     <th>Date</th>
                                 </tr>

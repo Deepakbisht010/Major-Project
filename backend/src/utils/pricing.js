@@ -42,9 +42,9 @@ export const getTaxAmount = async (businessType, shopId, month) => {
                 .neq('status', 'paid');
 
             if (isPastMonth || (pendingCount && pendingCount > 0)) {
-                penalty = baseAmount * 0.02;
+                penalty = baseAmount * 0.05;
                 finalAmount = baseAmount + penalty;
-                console.log(`[Pricing] Penalty applied (+2%): ${penalty} for shop ${shopId} (Month: ${month}, Past: ${isPastMonth}, PendingMonths: ${pendingCount})`);
+                console.log(`[Pricing] Penalty applied (+5%): ${penalty} for shop ${shopId} (Month: ${month}, Past: ${isPastMonth}, PendingMonths: ${pendingCount})`);
             }
         }
 
@@ -60,14 +60,22 @@ export const getTaxAmount = async (businessType, shopId, month) => {
  */
 export const seedPricingData = async () => {
     const defaultData = [
-        { business_type: 'General Store', amount: 2 },
-        { business_type: 'Medical Store', amount: 1 },
-        { business_type: 'Clothing Store', amount: 2 },
-        { business_type: 'Electronics Shop', amount: 3 },
-        { business_type: 'Restaurant / Eatery', amount: 3 },
-        { business_type: 'Hardware Store', amount: 2 },
-        { business_type: 'Stationery Shop', amount: 1 },
-        { business_type: 'Other', amount: 2 }
+        { business_type: 'General Store', amount: 500 },
+        { business_type: 'general', amount: 500 },
+        { business_type: 'Medical Store', amount: 750 },
+        { business_type: 'medical', amount: 750 },
+        { business_type: 'Clothing Store', amount: 1000 },
+        { business_type: 'clothes', amount: 1000 },
+        { business_type: 'Electronics Shop', amount: 1500 },
+        { business_type: 'electronics', amount: 1500 },
+        { business_type: 'Restaurant / Eatery', amount: 1200 },
+        { business_type: 'restaurant', amount: 1200 },
+        { business_type: 'Hardware Store', amount: 800 },
+        { business_type: 'hardware', amount: 800 },
+        { business_type: 'Stationery Shop', amount: 400 },
+        { business_type: 'stationery', amount: 400 },
+        { business_type: 'Other', amount: 500 },
+        { business_type: 'other', amount: 500 }
     ];
 
     const { error } = await supabase

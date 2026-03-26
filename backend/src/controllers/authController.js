@@ -5,6 +5,15 @@ import { sendHelpEmail } from '../utils/mailer.js';
 export const sendHelpEmailRequest = async (req, res) => {
   try {
     const { name, email, mobile, message } = req.body;
+
+    // Validate 10-digit mobile number
+    if (!mobile || !/^\d{10}$/.test(mobile)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter a valid 10-digit mobile number.'
+      });
+    }
+
     console.log(`[Backend] Help Email Request received from: ${name} (${email})`);
 
     // Check for email credentials
@@ -90,6 +99,11 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, error: 'A valid email address is required.' });
     }
 
+    // Validate 10-digit mobile number
+    if (!mobile || !/^\d{10}$/.test(mobile)) {
+      return res.status(400).json({ success: false, error: 'Please enter a valid 10-digit mobile number.' });
+    }
+
     // 1. Check if user already exists by GST ID
     const { data: existingUser } = await supabase
       .from('users')
@@ -165,8 +179,9 @@ export const registerUser = async (req, res) => {
     // Generate these immediately so the user panel is populated on first login.
     try {
       if (profile && profile.id) {
-        console.log(`[Backend] Auto-generating tax records for new user ${profile.id} (${businessType})`);
-        await generateTaxesForUser(profile.id, businessType);
+        console.log(`[Backend] Auto-generating tax records for new user ${profile.id} (${businessType}), registered: ${profile.created_at}`);
+        // Pass registration date so months BEFORE registration are marked N/A
+        await generateTaxesForUser(profile.id, businessType, null, profile.created_at);
       }
     } catch (genError) {
       console.warn('[Backend] Non-critical error during initial tax generation:', genError.message);
@@ -184,18 +199,22 @@ export const loginAdmin = async (req, res) => {
   try {
     const { username, password, passkey, isDemo } = req.body;
 
-    // List of additional admins provided by the user
+    // List of 13 District Admins as per user request (Password: name123)
     const extraAdmins = [
-      // ── SUPER ADMIN — Full state-wide access ──
-      { username: 'Deepak Bisht', password: 'deepak@2308', passkey: 'DEEPAK2026', district: 'all', name: 'Deepak Bisht' },
       { username: 'superadmin', password: 'superadmin@2026', passkey: 'ADMIN2026', district: 'all', name: 'Super Admin' },
-      // ── District Admins ──────────────────────────────────────────────────────
-      { username: 'Deepak Singh', password: 'deepak@1309', district: 'udhamsingh', name: 'Deepak Singh' },
-      { username: 'Manish', password: 'manish@2006', district: 'almora', name: 'Manish' },
-      { username: 'Bhavesh', password: 'bhavesh@123', district: 'nainital', name: 'Bhavesh' },
-      { username: 'sahil chand', password: 'sahil@123', district: 'chamoli', name: 'Sahil Chand' },
-      { username: 'Raja', password: 'raja@123', district: 'pithoragarh', name: 'Raja' },
-      { username: 'lalit', password: 'lalit@123', district: 'nainital', name: 'Lalit' }
+      { username: 'Deepak', password: 'deepak123', district: 'udhamsingh', name: 'Deepak (Udham Singh Nagar)' },
+      { username: 'Manish', password: 'manish123', district: 'almora', name: 'Manish (Almora)' },
+      { username: 'Raja', password: 'raja123', district: 'pithoragarh', name: 'Raja (Pithoragarh)' },
+      { username: 'Sumit', password: 'sumit123', district: 'chamoli', name: 'Sumit (Chamoli)' },
+      { username: 'Sahil', password: 'sahil123', district: 'uttarkashi', name: 'Sahil (Uttarkashi)' },
+      { username: 'Rohit', password: 'rohit123', district: 'rudraprayag', name: 'Rohit (Rudraprayag)' },
+      { username: 'Ajay', password: 'ajay123', district: 'pauri', name: 'Ajay (Pauri Garhwal)' },
+      { username: 'Bhavesh', password: 'bhavesh123', district: 'nainital', name: 'Bhavesh (Nainital)' },
+      { username: 'Gaurav', password: 'gaurav123', district: 'champawat', name: 'Gaurav (Champawat)' },
+      { username: 'Vikram', password: 'vikram123', district: 'bageshwar', name: 'Vikram (Bageshwar)' },
+      { username: 'Sanjay', password: 'sanjay123', district: 'haridwar', name: 'Sanjay (Haridwar)' },
+      { username: 'Neeraj', password: 'neeraj123', district: 'tehri', name: 'Neeraj (Tehri Garhwal)' },
+      { username: 'Rahul', password: 'rahul123', district: 'dehradun', name: 'Rahul (Dehradun)' }
     ];
 
 
@@ -229,7 +248,7 @@ export const loginAdmin = async (req, res) => {
         success: true,
         user: {
           ...adminData,
-          token: `demo-fake-admin-jwt-token-${adminData.district}`
+          token: `demo-fake-admin-jwt-token-${adminData.username}|${adminData.district}`
         }
       });
     }

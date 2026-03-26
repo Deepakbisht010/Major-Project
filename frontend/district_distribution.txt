@@ -1,9 +1,0 @@
-{
-  "champawat": 2,
-  "dehradun": 1,
-  "tehri": 1,
-  "almora": 16,
-  "nainital": 1,
-  "pithoragarh": 1,
-  "udhamsingh": 7
-}

@@ -97,7 +97,7 @@ export const getMonthlyTaxes = async (req, res) => {
     if (!taxes || taxes.length === 0) {
       dbLog(`Triggering auto-gen for ${profile.id}...`);
       try {
-        const genResult = await generateTaxesForUser(profile.id, profile.business_type);
+        const genResult = await generateTaxesForUser(profile.id, profile.business_type, null, profile.created_at);
         taxes = genResult.data;
         dbLog(`Auto-gen DONE. New count: ${taxes?.length || 0}`);
       } catch (genError) {
@@ -105,13 +105,14 @@ export const getMonthlyTaxes = async (req, res) => {
         // Generate a 12-month array anyway so the user can see and pay them, 
         // even if the backend is currently having RLS issues saving them.
         const year = new Date().getFullYear();
-        const currentMonthIndex = new Date().getMonth();
+        const regDate = new Date(profile.created_at || new Date());
+        const firstBillableMonthIndex = (regDate.getFullYear() === year) ? regDate.getMonth() : 0;
 
         taxes = Array.from({ length: 12 }, (_, i) => ({
           shop_id: profile.id,
           month: `${year}-${String(i + 1).padStart(2, '0')}`,
           amount: 0,
-          status: i < currentMonthIndex ? 'not_applicable' : 'pending'
+          status: i < firstBillableMonthIndex ? 'not_applicable' : 'pending'
         }));
       }
     }
@@ -139,8 +140,10 @@ export const getMonthlyTaxes = async (req, res) => {
       const isPastMonth = t.month < currentMonthStr;
       const isPaid = t.status === 'paid';
 
-      // Force not_applicable if it's before registration and not paid
-      const isNotApplicable = (t.status === 'not_applicable' || isBeforeRegistration) && !isPaid;
+      // Force not_applicable ONLY if it's explicitly marked as such in the database
+      // If it's 'pending' or 'paid', we should show it Regardless of the registration date
+      // (This fix is for users like Ajay who need to pay months before their official 'create_at' month)
+      const isNotApplicable = t.status === 'not_applicable';
 
       let penalty = 0;
       let displayAmount = basePrice;
@@ -149,7 +152,7 @@ export const getMonthlyTaxes = async (req, res) => {
         displayAmount = 0;
         penalty = 0;
       } else if (!isPaid && isPastMonth) {
-        penalty = basePrice * 0.02;
+        penalty = basePrice * 0.05;
         console.log(`[Penalty Applied] Month: ${t.month}, Penalty: ${penalty}`);
       }
 
@@ -158,7 +161,7 @@ export const getMonthlyTaxes = async (req, res) => {
         status: isNotApplicable ? 'not_applicable' : t.status,
         amount: displayAmount,
         penalty: Number(penalty.toFixed(10)),
-        penalty_display: isNotApplicable ? '-' : (penalty > 0 ? `2% = ₹${penalty.toFixed(2)}` : '₹0'),
+        penalty_display: isNotApplicable ? '-' : (penalty > 0 ? `5% = ₹${penalty.toFixed(2)}` : '₹0'),
         total: Number((displayAmount + penalty).toFixed(2))
       };
     });
@@ -245,5 +248,65 @@ export const submitComplaint = async (req, res) => {
       error: 'Failed to submit complaint. Table may be missing in Supabase.',
       details: error.message
     });
+  }
+};
+
+export const getNotices = async (req, res) => {
+  try {
+    const authId = req.user.id;
+
+    // 1. Resolve Auth ID to internal User ID
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_id', authId)
+      .maybeSingle();
+
+    if (userError || !user) {
+      return res.status(404).json({ success: false, error: 'User profile not found' });
+    }
+
+    const { data: notices, error } = await supabase
+      .from('notices')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, notices });
+  } catch (error) {
+    console.error('getNotices error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch notices' });
+  }
+};
+
+export const getGovUpdates = async (req, res) => {
+  try {
+    const authId = req.user.id;
+
+    // 1. Resolve Auth ID to internal User ID and district
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, district')
+      .eq('auth_id', authId)
+      .maybeSingle();
+
+    if (userError || !user) {
+      return res.status(404).json({ success: false, error: 'User profile not found' });
+    }
+
+    const { data: updates, error } = await supabase
+      .from('government_updates')
+      .select('*')
+      .or(`district.eq.${user.district},district.eq.all`)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, updates });
+  } catch (error) {
+    console.error('getGovUpdates taxpayer error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch government updates' });
   }
 };

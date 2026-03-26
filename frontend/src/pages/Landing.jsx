@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import Chatbot from '../components/Chatbot'
@@ -9,7 +10,8 @@ import UttarakhandMap from '../components/UttarakhandMap'
 import {
     FiShield, FiCreditCard, FiActivity, FiMessageCircle,
     FiBell, FiLock, FiMail, FiPhone, FiClock, FiSend,
-    FiCamera, FiGithub, FiLinkedin, FiInstagram
+    FiCamera, FiGithub, FiLinkedin, FiInstagram, FiUser,
+    FiHome, FiMapPin, FiAlertCircle, FiFileText
 } from 'react-icons/fi'
 
 import sumitImg from '../assets/sumit.jpeg'
@@ -194,50 +196,92 @@ export default function Landing() {
             <Navbar variant="landing" />
 
             {/* ===== HERO ===== */}
+
             <section id="home" className="hero">
+                {/* Decorative floating elements */}
+                <div className="float-element float-1">◆</div>
+                <div className="float-element float-2">◆</div>
+                <div className="float-element float-3">◆</div>
+
                 <div className="container">
                     <div className="hero-content">
-                        <div className="hero-text animate-in">
+                        <motion.div
+                            className="hero-text"
+                            initial={{ opacity: 0, x: -50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                        >
+                            <div className="hero-district">🏔️ {t('hero.district')}</div>
                             <h1>{t('hero.title')}</h1>
                             <p className="hero-subtitle">{t('hero.subtitle')}</p>
-                            <div className="hero-district">🏔️ {t('hero.district')}</div>
                             <p className="hero-desc">{t('hero.description')}</p>
+
                             <div className="hero-actions">
-                                <Link to="/register" className="btn btn-maroon btn-lg">{t('hero.registerNow')}</Link>
-                                <button className="btn btn-outline btn-lg" onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}>
-                                    {t('hero.learnMore')}
+                                <Link to="/register" className="btn btn-hero-primary btn-lg">
+                                    <FiUser style={{ marginRight: '8px' }} /> {t('hero.registerNow')}
+                                </Link>
+                                <button className="btn btn-hero-secondary btn-lg" onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}>
+                                    <FiClock style={{ marginRight: '8px' }} /> {t('hero.learnMore')}
                                 </button>
                             </div>
-                        </div>
-                        <div className="hero-map animate-in delay-2">
+                        </motion.div>
+
+                        <motion.div
+                            className="hero-map-wrapper"
+                            initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
+                            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                            transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
+                        >
                             <UttarakhandMap />
-                        </div>
+                        </motion.div>
                     </div>
                 </div>
             </section>
 
             {/* ===== ABOUT ===== */}
-            <section id="about" className="section" style={{ background: 'var(--bg-secondary)' }}>
+
+            <section id="about" className="section" style={{ background: 'var(--bg-secondary)', overflow: 'hidden' }}>
                 <div className="container">
                     <div className="section-divider">
                         <div className="line"></div>
                         <div className="aipan-diamond"></div>
                         <div className="line"></div>
                     </div>
-                    <h2 className="section-title">{t('about.sectionTitle')}</h2>
-                    <p className="section-subtitle">{t('about.sectionSubtitle')}</p>
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <h2 className="section-title">{t('about.sectionTitle')}</h2>
+                        <p className="section-subtitle">{t('about.sectionSubtitle')}</p>
+                    </motion.div>
 
                     <div className="features-grid">
                         {aboutFeatures.map((f, i) => {
                             const Icon = f.icon
                             return (
-                                <div className={`feature-card animate-in delay-${(i % 3) + 1}`} key={f.key}>
-                                    <div className={`card-icon ${f.color}`}>
-                                        <Icon size={24} />
+                                <motion.div
+                                    className={`feature-card-premium ${f.color}`}
+                                    key={f.key}
+                                    initial={{ opacity: 0, y: 40 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.5, delay: i * 0.1 }}
+                                    whileHover={{
+                                        y: -15,
+                                        scale: 1.03,
+                                        boxShadow: "0 40px 80px rgba(130, 29, 48, 0.15)",
+                                        transition: { type: "spring", stiffness: 400, damping: 10 }
+                                    }}
+                                >
+                                    <div className="card-number-bg">{i + 1}</div>
+                                    <div className={`card-icon-modern ${f.color}`}>
+                                        <Icon size={28} />
                                     </div>
                                     <h4>{t(`about.${f.key}`)}</h4>
                                     <p>{t(`about.${f.key}Desc`)}</p>
-                                </div>
+                                </motion.div>
                             )
                         })}
                     </div>
@@ -255,65 +299,128 @@ export default function Landing() {
                     <h2 className="section-title">{t('help.sectionTitle')}</h2>
                     <p className="section-subtitle">{t('help.sectionSubtitle')}</p>
 
-                    <div className="grid-2" style={{ maxWidth: 900, margin: '0 auto' }}>
-                        <form onSubmit={handleHelpSubmit}>
-                            {helpSent && <div className="alert alert-success">✓ {t('help.successMsg')}</div>}
-                            <div className="form-group">
-                                <label>{t('help.name')}</label>
-                                <input type="text" className="form-control" required value={helpForm.name}
-                                    onChange={e => setHelpForm({ ...helpForm, name: e.target.value })} />
-                            </div>
-                            <div className="form-group">
-                                <label>{t('help.email')}</label>
-                                <input type="email" className="form-control" required value={helpForm.email}
-                                    onChange={e => setHelpForm({ ...helpForm, email: e.target.value })} />
-                            </div>
-                            <div className="form-group">
-                                <label>{t('help.mobile')}</label>
-                                <input type="tel" className="form-control" required value={helpForm.mobile}
-                                    onChange={e => setHelpForm({ ...helpForm, mobile: e.target.value })} />
-                            </div>
-                            <div className="form-group">
-                                <label>{t('help.message')}</label>
-                                <textarea className="form-control" required value={helpForm.message}
-                                    onChange={e => setHelpForm({ ...helpForm, message: e.target.value })}></textarea>
-                            </div>
-                            <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={helpLoading}>
-                                {helpLoading ? t('admin.submitting') : <><FiSend size={16} /> {t('help.submit')}</>}
-                            </button>
-                        </form>
+                    <div className="help-grid-container reveal">
+                        <div className="grid-2" style={{ maxWidth: 1100, margin: '0 auto' }}>
+                            <div className="form-card-premium reveal-scale">
+                                <h3 style={{ marginBottom: '30px', color: 'var(--color-maroon)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <span className="card-icon maroon" style={{ marginBottom: 0, width: 44, height: 44 }}>
+                                        <FiMessageCircle size={22} />
+                                    </span>
+                                    {t('help.sendQuery')}
+                                </h3>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                            <div className="card aipan-corner">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                                    <div className="card-icon saffron" style={{ marginBottom: 0, width: 44, height: 44, fontSize: '1.1rem' }}>
-                                        <FiMail />
+                                <form onSubmit={handleHelpSubmit}>
+                                    {helpSent && (
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="alert alert-success"
+                                            style={{ marginBottom: '24px', borderRadius: '12px', background: 'var(--color-green-light)', color: 'var(--color-green)', border: 'none' }}
+                                        >
+                                            <FiActivity size={18} /> {t('help.successMsg')}
+                                        </motion.div>
+                                    )}
+
+                                    <div className="form-group">
+                                        <label className="form-label-premium"><FiUser size={14} /> {t('help.name')}</label>
+                                        <div className="input-icon-wrapper">
+                                            <input type="text" className="form-control form-control-premium" required value={helpForm.name}
+                                                onChange={e => setHelpForm({ ...helpForm, name: e.target.value })}
+                                                placeholder="e.g. Rahul Sharma"
+                                            />
+                                            <FiUser size={18} />
+                                        </div>
                                     </div>
-                                    <div>
+
+                                    <div className="grid-form-responsive" style={{ marginBottom: '20px' }}>
+                                        <div className="form-group" style={{ marginBottom: 0 }}>
+                                            <label className="form-label-premium"><FiMail size={14} /> {t('help.email')}</label>
+                                            <div className="input-icon-wrapper">
+                                                <input type="email" className="form-control form-control-premium" required value={helpForm.email}
+                                                    onChange={e => setHelpForm({ ...helpForm, email: e.target.value })}
+                                                    placeholder="rahul@example.com"
+                                                />
+                                                <FiMail size={18} />
+                                            </div>
+                                        </div>
+                                        <div className="form-group" style={{ marginBottom: 0 }}>
+                                            <label className="form-label-premium"><FiPhone size={14} /> {t('help.mobile')}</label>
+                                            <div className="input-icon-wrapper">
+                                                <input
+                                                    type="tel"
+                                                    className="form-control form-control-premium"
+                                                    required
+                                                    value={helpForm.mobile}
+                                                    maxLength={10}
+                                                    placeholder="10-digit number"
+                                                    pattern="[0-9]{10}"
+                                                    title="Please enter a 10-digit mobile number"
+                                                    onChange={e => {
+                                                        const value = e.target.value.replace(/\D/g, '');
+                                                        if (value.length <= 10) {
+                                                            setHelpForm({ ...helpForm, mobile: value });
+                                                        }
+                                                    }}
+                                                />
+                                                <FiPhone size={18} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group" style={{ marginBottom: '30px' }}>
+                                        <label className="form-label-premium"><FiMessageCircle size={14} /> {t('help.message')}</label>
+                                        <textarea className="form-control form-control-premium" required value={helpForm.message}
+                                            onChange={e => setHelpForm({ ...helpForm, message: e.target.value })}
+                                            placeholder="How can we help you?"
+                                            style={{ minHeight: '130px', paddingLeft: '16px' }}></textarea>
+                                    </div>
+
+                                    <button type="submit" className="btn btn-premium-send btn-lg" style={{ width: '100%' }} disabled={helpLoading}>
+                                        {helpLoading ? (
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }}></span>
+                                                {t('admin.submitting')}
+                                            </span>
+                                        ) : (
+                                            <><FiSend size={20} /> {t('help.submit')}</>
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div className="contact-info-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                                <div className="contact-info-header">
+                                    <h3 style={{ color: 'var(--color-maroon)', marginBottom: '8px' }}>{t('help.getInTouch')}</h3>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>{t('help.contactDesc')}</p>
+                                </div>
+
+                                <div className="card contact-method-card">
+                                    <div className="method-icon-box saffron">
+                                        <FiMail size={24} />
+                                    </div>
+                                    <div className="method-content">
                                         <h5>{t('help.officialEmail')}</h5>
-                                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>deepakbisht4050@gmail.com</p>
+                                        <p>deepakbisht4050@gmail.com</p>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="card aipan-corner">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                                    <div className="card-icon green" style={{ marginBottom: 0, width: 44, height: 44, fontSize: '1.1rem' }}>
-                                        <FiPhone />
+
+                                <div className="card contact-method-card">
+                                    <div className="method-icon-box green">
+                                        <FiPhone size={24} />
                                     </div>
-                                    <div>
+                                    <div className="method-content">
                                         <h5>{t('help.helpline')}</h5>
-                                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>+91 7300756458</p>
+                                        <p>+91 7300756458</p>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="card aipan-corner">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                                    <div className="card-icon maroon" style={{ marginBottom: 0, width: 44, height: 44, fontSize: '1.1rem' }}>
-                                        <FiClock />
+
+                                <div className="card contact-method-card">
+                                    <div className="method-icon-box maroon">
+                                        <FiClock size={24} />
                                     </div>
-                                    <div>
+                                    <div className="method-content">
                                         <h5>{t('help.officeHours')}</h5>
-                                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>{t('help.officeHoursValue')}</p>
+                                        <p>{t('help.officeHoursValue')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -341,43 +448,70 @@ export default function Landing() {
                         )}
                         {complaintSent && <div className="alert alert-success">✓ {t('complaint.successMsg')}</div>}
 
-                        <form onSubmit={handleComplaintSubmit} className="card">
-                            <div className="form-group">
-                                <label>{t('complaint.shopName')}</label>
-                                <input type="text" className="form-control" required value={complaintForm.shopName}
-                                    onChange={e => setComplaintForm({ ...complaintForm, shopName: e.target.value })} />
+                        <form onSubmit={handleComplaintSubmit} className="form-card-premium reveal-scale">
+                            <div className="grid-form-responsive">
+                                <div className="form-group-premium">
+                                    <label className="form-label-premium"><FiHome size={14} /> {t('complaint.shopName')}</label>
+                                    <div className="input-icon-wrapper">
+                                        <input type="text" className="form-control-premium" required value={complaintForm.shopName}
+                                            onChange={e => setComplaintForm({ ...complaintForm, shopName: e.target.value })}
+                                            placeholder="e.g. Himalayan Sweets" />
+                                        <FiHome size={18} />
+                                    </div>
+                                </div>
+                                <div className="form-group-premium">
+                                    <label className="form-label-premium"><FiMapPin size={14} /> {t('complaint.location')}</label>
+                                    <div className="input-icon-wrapper">
+                                        <input type="text" className="form-control-premium" required value={complaintForm.location}
+                                            onChange={e => setComplaintForm({ ...complaintForm, location: e.target.value })}
+                                            placeholder="e.g. Mall Road, Almora" />
+                                        <FiMapPin size={18} />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label>{t('complaint.location')}</label>
-                                <input type="text" className="form-control" required value={complaintForm.location}
-                                    onChange={e => setComplaintForm({ ...complaintForm, location: e.target.value })} />
+
+                            <div className="form-group-premium">
+                                <label className="form-label-premium"><FiAlertCircle size={14} /> {t('complaint.reason')}</label>
+                                <div className="input-icon-wrapper">
+                                    <select className="form-control-premium" required value={complaintForm.reason}
+                                        onChange={e => setComplaintForm({ ...complaintForm, reason: e.target.value })}
+                                        style={{ appearance: 'none' }}>
+                                        <option value="">{t('complaint.selectReason') || '--'}</option>
+                                        {complaintReasons.map(r => (
+                                            <option key={r} value={r}>{t(`complaint.reasons.${r}`)}</option>
+                                        ))}
+                                    </select>
+                                    <FiAlertCircle size={18} />
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label>{t('complaint.reason')}</label>
-                                <select className="form-control" required value={complaintForm.reason}
-                                    onChange={e => setComplaintForm({ ...complaintForm, reason: e.target.value })}>
-                                    <option value="">--</option>
-                                    {complaintReasons.map(r => (
-                                        <option key={r} value={r}>{t(`complaint.reasons.${r}`)}</option>
-                                    ))}
-                                </select>
+
+                            <div className="form-group-premium">
+                                <label className="form-label-premium"><FiFileText size={14} /> {t('complaint.description')}</label>
+                                <div className="input-icon-wrapper">
+                                    <textarea className="form-control-premium" required rows="4" value={complaintForm.description}
+                                        onChange={e => setComplaintForm({ ...complaintForm, description: e.target.value })}
+                                        placeholder={t('complaint.descriptionPlaceholder')}></textarea>
+                                    <FiFileText size={18} style={{ top: '23px' }} />
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label>{t('complaint.description')}</label>
-                                <textarea className="form-control" required value={complaintForm.description}
-                                    onChange={e => setComplaintForm({ ...complaintForm, description: e.target.value })}></textarea>
-                            </div>
-                            <div className="form-group">
-                                <label>{t('complaint.uploadPhoto')} {complaintFile && <span style={{ color: 'var(--color-green)' }}>(Selected)</span>}</label>
+
+                            <div className="form-group-premium" style={{ marginBottom: '20px' }}>
+                                <label className="form-label-premium"><FiCamera size={14} /> {t('complaint.uploadPhoto')}</label>
                                 <div className="file-input-wrapper">
-                                    <div className="file-input-label" style={{ borderColor: complaintFile ? 'var(--color-green)' : undefined }}>
+                                    <div className="file-input-label"
+                                        style={{
+                                            borderColor: complaintFile ? 'var(--color-green)' : 'var(--border-color)',
+                                            background: complaintFile ? 'var(--color-green-light)' : '#f8fafc',
+                                            borderRadius: '16px'
+                                        }}>
                                         <FiCamera size={18} /> {complaintFile ? complaintFile.name : t('complaint.uploadPhoto')}
                                     </div>
                                     <input type="file" accept="image/*" onChange={e => setComplaintFile(e.target.files[0])} />
                                 </div>
                             </div>
-                            <button type="submit" className="btn btn-maroon btn-lg" style={{ width: '100%' }} disabled={complaintLoading}>
-                                {complaintLoading ? t('admin.submitting') : t('complaint.submit')}
+
+                            <button type="submit" className="btn btn-maroon btn-lg" style={{ width: '100%', borderRadius: '16px' }} disabled={complaintLoading}>
+                                {complaintLoading ? t('admin.submitting') : <span><FiSend /> {t('complaint.submit')}</span>}
                             </button>
                         </form>
                     </div>
@@ -385,7 +519,7 @@ export default function Landing() {
             </section>
 
             {/* ===== TEAM ===== */}
-            <section id="team" className="section">
+            <section id="team" className="section team-section-premium">
                 <div className="container">
                     <div className="section-divider">
                         <div className="line"></div>
@@ -395,12 +529,23 @@ export default function Landing() {
                     <h2 className="section-title">{t('team.sectionTitle')}</h2>
                     <p className="section-subtitle">{t('team.sectionSubtitle')}</p>
 
-                    <div className="team-grid">
+                    <div className="team-grid reveal">
                         {teamMembers.map((m, i) => (
-                            <div
+                            <motion.div
                                 key={i}
-                                className={`team-card animate-in delay-${(i % 4) + 1} ${selectedMember === i ? 'active' : ''}`}
+                                className={`team-card reveal ${selectedMember === i ? 'active' : ''}`}
                                 onClick={() => setSelectedMember(selectedMember === i ? null : i)}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.4, delay: i * 0.05 }}
+                                whileHover={{
+                                    y: -12,
+                                    scale: 1.02,
+                                    borderColor: "var(--color-maroon)",
+                                    boxShadow: "0 25px 50px rgba(130, 29, 48, 0.15)",
+                                    transition: { type: "spring", stiffness: 400, damping: 12 }
+                                }}
                             >
                                 <div className="team-card-header"></div>
                                 <div className="team-photo-container">
@@ -424,7 +569,7 @@ export default function Landing() {
                                         <p>{t('team.memberDesc')}</p>
                                     </div>
                                 )}
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
                 </div>

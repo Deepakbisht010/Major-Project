@@ -10,17 +10,20 @@ export default function ForgotPassword() {
     const [email, setEmail] = useState('')
     const [otp, setOtp] = useState('')
     const [newPassword, setNewPassword] = useState('')
-    const [done, setDone] = useState(false)
+    const [generatedOtp, setGeneratedOtp] = useState('')
 
     const sendOtp = (e) => {
         e.preventDefault()
-        alert('OTP sent to ' + email + ' (Demo OTP: 123456)')
+        const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        setGeneratedOtp(newOtp);
+        alert(`OTP sent to ${email} (Your OTP: ${newOtp})`);
+        setOtp(newOtp); // Auto-fill
         setStep(2)
     }
 
     const verifyAndReset = (e) => {
         e.preventDefault()
-        if (otp === '123456' && newPassword.length >= 6) {
+        if (otp === generatedOtp && newPassword.length >= 6) {
             setDone(true)
         } else {
             alert('Invalid OTP or password too short')
