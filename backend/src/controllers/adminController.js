@@ -130,8 +130,8 @@ export const getComplaints = async (req, res) => {
     const mapDistrict = (d) => { if (!d) return d; const lower = d.toLowerCase(); if (lower === 'udhamsinghnagar') return 'udhamsingh'; return lower; };
     const targetDistrict = mapDistrict(adminDistrict);
     const isFiltered = targetDistrict && targetDistrict !== 'all' && targetDistrict !== 'admin';
-    let query = supabase.from('complaints').select('*, users!user_id(username, mobile, district, block)');
-    if (isFiltered) query = query.filter('users.district', 'eq', targetDistrict);
+    let query = supabase.from('complaints').select('*, users!inner(username, mobile, district, block)');
+    if (isFiltered) query = query.eq('users.district', targetDistrict);
     const { data: complaints, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
     res.status(200).json({ success: true, complaints });
@@ -153,18 +153,33 @@ export const updateComplaintStatus = async (req, res) => {
 
 export const getAuditLogs = async (req, res) => {
   try {
+    const adminDistrict = req.user.user_metadata?.district;
+    const mapDistrict = (d) => { if (!d) return d; const lower = d.toLowerCase(); if (lower === 'udhamsinghnagar') return 'udhamsingh'; return lower; };
+    const targetDistrict = mapDistrict(adminDistrict);
+    const isFiltered = targetDistrict && targetDistrict !== 'all' && targetDistrict !== 'admin';
+
     const todayISO = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
-    const [uRes, pRes, nRes, cRes] = await Promise.all([
-      supabase.from('users').select('username, created_at').gte('created_at', todayISO),
-      supabase.from('payments').select('amount, created_at, users!user_id(username)').eq('status', 'success').gte('created_at', todayISO),
-      supabase.from('notices').select('title, created_at, users!user_id(username)').gte('created_at', todayISO),
-      supabase.from('complaints').select('reason, created_at, users!user_id(username)').gte('created_at', todayISO)
-    ]);
+
+    let uQuery = supabase.from('users').select('username, created_at').gte('created_at', todayISO);
+    let pQuery = supabase.from('payments').select('amount, created_at, users!inner(username, district)').eq('status', 'success').gte('created_at', todayISO);
+    let nQuery = supabase.from('notices').select('title, created_at, users!inner(username, district)').gte('created_at', todayISO);
+    let cQuery = supabase.from('complaints').select('reason, created_at, users!inner(username, district)').gte('created_at', todayISO);
+
+    if (isFiltered) {
+      uQuery = uQuery.ilike('district', `%${targetDistrict}%`);
+      pQuery = pQuery.eq('users.district', targetDistrict);
+      nQuery = nQuery.eq('users.district', targetDistrict);
+      cQuery = cQuery.eq('users.district', targetDistrict);
+    }
+
+    const [uRes, pRes, nRes, cRes] = await Promise.all([uQuery, pQuery, nQuery, cQuery]);
+
     const logs = [];
     (uRes.data || []).forEach(u => logs.push({ timestamp: u.created_at, action: 'Registration Today', type: 'Registration', performedBy: u.username, details: 'New user registered.' }));
     (pRes.data || []).forEach(p => logs.push({ timestamp: p.created_at, action: 'Payment Made', type: 'Payment', performedBy: p.users?.username, details: `₹${p.amount} received.` }));
     (nRes.data || []).forEach(n => logs.push({ timestamp: n.created_at, action: 'Notice Sent', type: 'Notice', performedBy: 'Admin', details: `Sent to ${n.users?.username}.` }));
     (cRes.data || []).forEach(c => logs.push({ timestamp: c.created_at, action: 'Complaint Filed', type: 'Complaint', performedBy: c.users?.username, details: c.reason.substring(0, 20) }));
+
     res.status(200).json({ success: true, logs: logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) });
   } catch (error) { res.status(500).json({ success: false }); }
 };
@@ -217,9 +232,19 @@ export const deleteGovUpdate = async (req, res) => {
 
 export const sendBulkNotices = async (req, res) => {
   try {
+    const adminDistrict = req.user.user_metadata?.district;
+    const mapDistrict = (d) => { if (!d) return d; const lower = d.toLowerCase(); if (lower === 'udhamsinghnagar') return 'udhamsingh'; return lower; };
+    const targetDistrict = mapDistrict(adminDistrict);
+    const isFiltered = targetDistrict && targetDistrict !== 'all' && targetDistrict !== 'admin';
+
     const { selectedUsers, month, year, text } = req.body;
-    const { data: users, error: uError } = await supabase.from('users').select('id, gst_id').in('gst_id', selectedUsers);
+
+    let query = supabase.from('users').select('id, gst_id').in('gst_id', selectedUsers);
+    if (isFiltered) query = query.ilike('district', `%${targetDistrict}%`);
+
+    const { data: users, error: uError } = await query;
     if (uError) throw uError;
+
     const { error: iError } = await supabase.from('notices').insert(users.map(u => ({ user_id: u.id, title: `Notice ${month} ${year}`, message: text, month, year: parseInt(year) })));
     if (iError) throw iError;
     res.status(200).json({ success: true });

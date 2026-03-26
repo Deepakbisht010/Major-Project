@@ -51,7 +51,7 @@ export default function AdminCollaboration() {
         <div style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', fontFamily: "'Inter', sans-serif" }}>
 
             {/* Header */}
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            <motion.div className="collab-header" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg, #821D30, #a52438)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -63,7 +63,7 @@ export default function AdminCollaboration() {
                     </div>
                 </div>
                 {/* Tab Pills */}
-                <div style={{ display: 'flex', gap: 6, background: '#f1f5f9', borderRadius: 14, padding: 4 }}>
+                <div className="collab-tabs" style={{ display: 'flex', gap: 6, background: '#f1f5f9', borderRadius: 14, padding: 4 }}>
                     {[
                         { key: 'chat', label: t('collab.chatTab'), icon: <FiMessageCircle size={15} /> },
                         { key: 'meeting', label: t('collab.meetingTab'), icon: <FiVideo size={15} /> },
@@ -162,7 +162,10 @@ function ChatPanel({ myName, myDistrict, myPhotoUrl }) {
                     await channel.track({ name: myName, district: myDistrict, photoUrl: myPhotoUrl, joinedAt: Date.now() });
                 }
             });
-        return () => { channel.unsubscribe(); };
+        return () => {
+            channel.unsubscribe();
+            supabase.removeChannel(channel);
+        };
     }, [myName, myDistrict]);
 
     // Scroll to bottom when room changes or new msg arrives

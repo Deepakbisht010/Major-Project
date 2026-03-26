@@ -4513,4 +4513,17 @@ textarea,
     height: 500px !important;
     flex-shrink: 0;
   }
+
+  .collab-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px;
+  }
+
+  .collab-tabs {
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    justify-content: flex-start;
+  }
 }
