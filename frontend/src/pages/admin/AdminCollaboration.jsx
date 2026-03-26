@@ -141,8 +141,9 @@ function ChatPanel({ myName, myDistrict, myPhotoUrl }) {
     }, []);
 
     useEffect(() => {
+        const uniqueKey = `${myName}-${Math.random().toString(36).substring(2, 9)}`;
         const channel = supabase.channel('admin-group-chat', {
-            config: { presence: { key: myName } }
+            config: { presence: { key: uniqueKey } }
         });
         channelRef.current = channel;
         channel
@@ -236,9 +237,9 @@ function ChatPanel({ myName, myDistrict, myPhotoUrl }) {
     );
 
     return (
-        <div style={{ display: 'flex', height: '100%', gap: 16 }}>
+        <div className="collab-chat-layout" style={{ display: 'flex', height: '100%', gap: 16 }}>
             {/* Sidebar — Select Chat */}
-            <div style={{ width: 230, background: 'white', borderRadius: 20, border: '1px solid #f1f5f9', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
+            <div className="collab-sidebar" style={{ width: 230, background: 'white', borderRadius: 20, border: '1px solid #f1f5f9', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
                 <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #f1f5f9' }}>
                     <p style={{ margin: '0 0 10px', fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                         {t('collab.selectRoomTitle')}
@@ -291,7 +292,7 @@ function ChatPanel({ myName, myDistrict, myPhotoUrl }) {
             </div>
 
             {/* Chat Area */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'white', borderRadius: 20, border: '1px solid #f1f5f9', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+            <div className="collab-chat-area" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'white', borderRadius: 20, border: '1px solid #f1f5f9', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                 {/* Chat Header */}
                 <div style={{ padding: '12px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 0 3px rgba(34,197,94,0.2)' }} />
