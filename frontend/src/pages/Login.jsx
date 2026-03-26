@@ -157,16 +157,10 @@ export default function Login() {
                         {t('auth.noAccount')} <Link to="/register">{t('auth.registerHere')}</Link>
                     </div>
 
-                    {tab === 'user' && (
-                        <div className="alert alert-info" style={{ marginTop: 16, fontSize: '0.8rem' }}>
-                            💡 Demo: Use any GST ID with password <strong>demo123</strong>
-                        </div>
-                    )}
-                    {tab === 'admin' && (
-                        <div className="alert alert-info" style={{ marginTop: 16, fontSize: '0.8rem' }}>
-                            💡 Demo: Any username, password <strong>admin123</strong>, passkey <strong>ADMIN2026</strong>
-                        </div>
-                    )}
+                    <div className="login-secure-badge">
+                        <span>🔒</span>
+                        <span>Secured by 256-bit SSL Encryption</span>
+                    </div>
                 </div>
             </div>
         </div>

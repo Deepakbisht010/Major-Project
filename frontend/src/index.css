@@ -218,9 +218,19 @@
   overflow: hidden;
   border-radius: var(--radius-xl);
   perspective: 1000px;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .responsive-map-img {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  display: block;
+  object-fit: contain;
   transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   filter: drop-shadow(0 15px 35px rgba(130, 29, 48, 0.1));
   animation: float-map 8s ease-in-out infinite;
@@ -2252,8 +2262,22 @@ select.form-control {
   padding: 40px;
   width: 100%;
   max-width: 520px;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border-color);
+  box-shadow: 0 25px 60px rgba(130, 29, 48, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(130, 29, 48, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-maroon), var(--color-saffron), var(--color-maroon));
+  background-size: 200% auto;
+  animation: shine 3s linear infinite;
 }
 
 .auth-card.wide {
@@ -2307,6 +2331,36 @@ select.form-control {
   margin-top: 20px;
   font-size: 0.88rem;
   color: var(--text-secondary);
+}
+
+/* Animated secure badge at login bottom */
+.login-secure-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 20px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, rgba(91, 154, 89, 0.08), rgba(91, 154, 89, 0.04));
+  border: 1px solid rgba(91, 154, 89, 0.2);
+  border-radius: 30px;
+  font-size: 0.75rem;
+  color: #5B9A59;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  animation: pulse-badge 3s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(91, 154, 89, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(91, 154, 89, 0);
+  }
 }
 
 .auth-link a,
