@@ -4526,4 +4526,11 @@ textarea,
     white-space: nowrap;
     justify-content: flex-start;
   }
+
+  .collab-select-dropdown {
+    max-width: 100%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
 }

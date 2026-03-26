@@ -34,7 +34,7 @@ export const getMetrics = async (req, res) => {
     if (userError) throw userError;
 
     let paymentQuery = supabase.from('payments').select(`amount, status, created_at, user_id, users!user_id!inner(district, username, gst_id, business_type, block)`);
-    if (isFiltered) paymentQuery = paymentQuery.eq('users.district', targetDistrict);
+    if (isFiltered) paymentQuery = paymentQuery.ilike('users.district', `%${targetDistrict}%`);
     const { data: payments, error: paymentError } = await paymentQuery;
     if (paymentError) throw paymentError;
 
@@ -89,7 +89,7 @@ export const getAnalytics = async (req, res) => {
     const isFiltered = targetDistrict && targetDistrict !== 'all' && targetDistrict !== 'admin';
 
     let userQuery = supabase.from('users').select(`id, username, district, block,  taxes!user_id (id, amount, status, year, month), monthly_taxes!shop_id (id, amount, status, month), payments!user_id (id, transaction_id, amount, status, created_at)`);
-    if (isFiltered) userQuery = userQuery.eq('district', targetDistrict);
+    if (isFiltered) userQuery = userQuery.ilike('district', `%${targetDistrict}%`);
     const { data: users, error } = await userQuery;
     if (error) throw error;
 
@@ -131,7 +131,7 @@ export const getComplaints = async (req, res) => {
     const targetDistrict = mapDistrict(adminDistrict);
     const isFiltered = targetDistrict && targetDistrict !== 'all' && targetDistrict !== 'admin';
     let query = supabase.from('complaints').select('*, users!inner(username, mobile, district, block)');
-    if (isFiltered) query = query.eq('users.district', targetDistrict);
+    if (isFiltered) query = query.ilike('users.district', `%${targetDistrict}%`);
     const { data: complaints, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
     res.status(200).json({ success: true, complaints });
@@ -167,9 +167,9 @@ export const getAuditLogs = async (req, res) => {
 
     if (isFiltered) {
       uQuery = uQuery.ilike('district', `%${targetDistrict}%`);
-      pQuery = pQuery.eq('users.district', targetDistrict);
-      nQuery = nQuery.eq('users.district', targetDistrict);
-      cQuery = cQuery.eq('users.district', targetDistrict);
+      pQuery = pQuery.ilike('users.district', `%${targetDistrict}%`);
+      nQuery = nQuery.ilike('users.district', `%${targetDistrict}%`);
+      cQuery = cQuery.ilike('users.district', `%${targetDistrict}%`);
     }
 
     const [uRes, pRes, nRes, cRes] = await Promise.all([uQuery, pQuery, nQuery, cQuery]);

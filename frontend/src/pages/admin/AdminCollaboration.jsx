@@ -197,8 +197,9 @@ function ChatPanel({ myName, myDistrict, myPhotoUrl }) {
         if (!file) return;
         setUploading(true);
         try {
-            const ext = file.name.split('.').pop();
-            const safeName = `${Date.now()}-${myName}-${file.name}`;
+            const sanitizedName = myName.replace(/[^a-z0-9]/gi, '_');
+            const sanitizedFile = file.name.replace(/[^a-z0-9._-]/gi, '_');
+            const safeName = `${Date.now()}-${sanitizedName}-${sanitizedFile}`;
             const { error } = await supabase.storage.from(CHAT_BUCKET).upload(`${CHAT_FILES_PATH}/${safeName}`, file);
             if (error) throw error;
             const { data } = supabase.storage.from(CHAT_BUCKET).getPublicUrl(`${CHAT_FILES_PATH}/${safeName}`);
@@ -248,6 +249,7 @@ function ChatPanel({ myName, myDistrict, myPhotoUrl }) {
                         {t('collab.selectRoomTitle')}
                     </p>
                     <select
+                        className="collab-select-dropdown"
                         value={chatRoom}
                         onChange={(e) => setChatRoom(e.target.value)}
                         style={{
@@ -535,7 +537,10 @@ function DocsPanel({ myName, myDistrict }) {
         if (!file) return;
         setUploading(true);
         try {
-            const safeName = `${Date.now()}-[${myName}]-${file.name}`;
+            // Sanitize: remove brackets, spaces and special chars from path key
+            const sanitizedName = myName.replace(/[^a-z0-9]/gi, '_');
+            const sanitizedFile = file.name.replace(/[^a-z0-9._-]/gi, '_');
+            const safeName = `${Date.now()}-${sanitizedName}-${sanitizedFile}`;
             const { error } = await supabase.storage.from(BUCKET).upload(`${DOCS_PATH}/${safeName}`, file);
             if (error) throw error;
             await fetchDocs();
