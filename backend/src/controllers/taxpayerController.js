@@ -135,15 +135,13 @@ export const getMonthlyTaxes = async (req, res) => {
 
     const dynamicTaxes = (taxes || []).map(t => {
       // Logic: If month is before registration month, it should be not_applicable
-      // UNLESS it was already paid (edge case)
+      // Unless it's already paid (some users might have back-paid)
       const isBeforeRegistration = t.month < regMonthStr;
       const isPastMonth = t.month < currentMonthStr;
       const isPaid = t.status === 'paid';
 
-      // Force not_applicable ONLY if it's explicitly marked as such in the database
-      // If it's 'pending' or 'paid', we should show it Regardless of the registration date
-      // (This fix is for users like Ajay who need to pay months before their official 'create_at' month)
-      const isNotApplicable = t.status === 'not_applicable';
+      // NEW FIXED LOGIC: Any month BEFORE registration that is NOT paid is marked Not Applicable
+      const isNotApplicable = t.status === 'not_applicable' || (isBeforeRegistration && !isPaid);
 
       let penalty = 0;
       let displayAmount = basePrice;

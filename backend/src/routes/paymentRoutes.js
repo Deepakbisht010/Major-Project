@@ -4,8 +4,8 @@ import { requireAuth } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.post('/create-order', createOrder);
-router.post('/verify-payment', verifyPayment);
+router.post('/create-order', requireAuth, createOrder);
+router.post('/verify-payment', requireAuth, verifyPayment);
 router.post('/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
 // New route for fetching payment history

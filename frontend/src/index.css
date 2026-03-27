@@ -4588,3 +4588,103 @@ textarea,
     white-space: nowrap;
   }
 }
+
+/* ============================================
+   User Dashboard & Payments Responsiveness
+   ============================================ */
+@media (max-width: 768px) {
+  .payment-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .payment-premium-card {
+    padding: 24px !important;
+    min-height: auto !important;
+  }
+
+  .payment-stat-value {
+    font-size: 2rem !important;
+  }
+
+  .page-header h1 {
+    font-size: 2.2rem !important;
+  }
+
+  .page-header p {
+    font-size: 0.95rem !important;
+  }
+
+  /* Success Container Scaling */
+  .success-container h2 {
+    font-size: 1.8rem !important;
+  }
+
+  .receipt-card {
+    padding: 15px !important;
+    width: 100% !important;
+  }
+
+  .receipt-header h3 {
+    font-size: 1rem !important;
+  }
+
+  .receipt-item-label,
+  .receipt-item-value {
+    font-size: 0.85rem !important;
+  }
+
+  .paid-stamp {
+    font-size: 3rem !important;
+    opacity: 0.1 !important;
+  }
+
+  /* Table Horizontal Scrolling on Mobile */
+  .data-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table {
+    min-width: 600px;
+    /* Force scroll instead of squishing */
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 12px 10px !important;
+    font-size: 0.85rem !important;
+  }
+
+  .premium-pay-input-wrapper {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .premium-pay-input {
+    width: 100% !important;
+  }
+
+  .premium-btn-pay {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header h1 {
+    font-size: 1.8rem !important;
+  }
+
+  .payment-stat-value {
+    font-size: 1.6rem !important;
+  }
+
+  .receipt-amount-display {
+    padding: 15px !important;
+  }
+
+  .receipt-amount-value {
+    font-size: 1.4rem !important;
+  }
+}

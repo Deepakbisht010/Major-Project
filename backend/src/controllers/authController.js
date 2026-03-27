@@ -262,3 +262,86 @@ export const loginAdmin = async (req, res) => {
     res.status(500).json({ success: false, error: 'Login failed' });
   }
 };
+
+// Step 1: Verify mobile number exists & return dummy OTP
+export const sendOtpByMobile = async (req, res) => {
+  try {
+    const { mobile } = req.body;
+    if (!mobile || !/^\d{10}$/.test(mobile)) {
+      return res.status(400).json({ success: false, error: 'Please enter a valid 10-digit mobile number.' });
+    }
+
+    // Check if user with this mobile exists
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, username')
+      .eq('mobile', mobile)
+      .maybeSingle();
+
+    if (error || !user) {
+      return res.status(404).json({ success: false, error: 'No account found with this mobile number.' });
+    }
+
+    // Generate a random 6-digit OTP
+    const randomOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`[Reset OTP] Dynamic OTP for mobile ${mobile}: ${randomOtp}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'OTP sent successfully',
+      otp: randomOtp // Returning it so frontend can display for copy option
+    });
+  } catch (err) {
+    console.error('[sendOtpByMobile Error]', err);
+    res.status(500).json({ success: false, error: 'Server error. Please try again.' });
+  }
+};
+
+// Step 2: Verify OTP and reset password
+export const resetPasswordByMobile = async (req, res) => {
+  try {
+    const { mobile, otp, newPassword } = req.body;
+
+    if (!mobile || !otp || !newPassword) {
+      return res.status(400).json({ success: false, error: 'All fields are required.' });
+    }
+
+    // Validate OTP exists and is 6 digits
+    if (!otp || otp.length !== 6) {
+      return res.status(400).json({ success: false, error: 'Enter a valid 6-digit OTP.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters.' });
+    }
+
+    // Find user by mobile
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, auth_id, email')
+      .eq('mobile', mobile)
+      .maybeSingle();
+
+    if (userError || !user) {
+      return res.status(404).json({ success: false, error: 'User not found.' });
+    }
+
+    // Use Supabase Admin API to update the user password
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      user.auth_id,
+      { password: newPassword }
+    );
+
+    if (updateError) {
+      console.error('[resetPasswordByMobile] Update error:', updateError);
+      return res.status(500).json({ success: false, error: 'Failed to update password. ' + updateError.message });
+    }
+
+    console.log(`[Reset Password] Password successfully updated for mobile: ${mobile}`);
+    return res.status(200).json({ success: true, message: 'Password updated successfully!' });
+
+  } catch (err) {
+    console.error('[resetPasswordByMobile Error]', err);
+    res.status(500).json({ success: false, error: 'Server error. Please try again.' });
+  }
+};

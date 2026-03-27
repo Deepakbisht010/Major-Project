@@ -53,10 +53,25 @@ export default function TaxTable() {
         }
     }, [user]);
 
-    const filtered = yearFilter ? taxData.filter(r => r.year === parseInt(yearFilter)) : taxData
+    const getCurrentMonthStr = () => {
+        const d = new Date();
+        const yr = d.getFullYear();
+        const mo = String(d.getMonth() + 1).padStart(2, '0');
+        return `${yr}-${mo}`;
+    };
+    const currentMonthStr = getCurrentMonthStr();
+
+    const filtered = yearFilter ? taxData.filter(r => r.month.startsWith(yearFilter)) : taxData
 
     const totalPaid = filtered.filter(r => r.status === 'paid').reduce((s, r) => s + Number(r.amount || 0), 0)
-    const totalPending = filtered.filter(r => r.status !== 'paid').reduce((s, r) => s + Number(r.total || 0), 0)
+
+    // Logic: Total pending should ONLY include months UP TO the current month (Past + Present)
+    // and skip months that are Not Applicable (Amount is already 0, but status check is cleaner)
+    const totalPending = filtered
+        .filter(r => r.status !== 'paid' && r.status !== 'not_applicable' && r.month <= currentMonthStr)
+        .reduce((s, r) => s + Number(r.total || r.amount || 0), 0)
+
+    const overdueCount = filtered.filter(r => r.status !== 'paid' && r.status !== 'not_applicable' && r.month < currentMonthStr).length
 
     const exportPDF = () => {
         const doc = new jsPDF()
@@ -125,7 +140,7 @@ export default function TaxTable() {
                         <FiAlertTriangle size={22} />
                     </div>
                     <div className="stat-info">
-                        <h3>{filtered.filter(r => r.status === 'overdue').length}</h3>
+                        <h3>{overdueCount}</h3>
                         <p>{t('user.overdue')}</p>
                     </div>
                 </div>
@@ -175,22 +190,29 @@ export default function TaxTable() {
                                 </td>
                             </tr>
                         )}
-                        {filtered.map(r => (
-                            <tr key={r.id}>
-                                <td>{r.month}</td>
-                                <td>₹{r.amount}</td>
-                                <td style={{ color: (r.penalty > 0 || r.penalty_display !== '₹0') ? 'var(--color-maroon)' : 'inherit' }}>
-                                    {r.penalty_display || (r.penalty > 0 ? `2% = ₹${r.penalty}` : '₹0')}
-                                </td>
-                                <td>
-                                    <span className={`badge badge-${r.status === 'paid' ? 'paid' : 'warning'}`}>
-                                        {statusIcon(r.status)} {t(`user.${r.status}`) || r.status}
-                                    </span>
-                                </td>
-                                <td>{r.paidDate}</td>
-                                <td>{r.paidTime}</td>
-                            </tr>
-                        ))}
+                        {filtered.map((r, i) => {
+                            const isNA = r.status === 'not_applicable';
+                            return (
+                                <tr key={r.id || i}>
+                                    <td>{r.month}</td>
+                                    <td>{isNA ? '-' : `₹${r.amount}`}</td>
+                                    <td style={{ color: (r.penalty > 0 || r.penalty_display !== '₹0') ? 'var(--color-maroon)' : 'inherit' }}>
+                                        {isNA ? '-' : (r.penalty_display || (r.penalty > 0 ? `2% = ₹${r.penalty}` : '₹0'))}
+                                    </td>
+                                    <td>
+                                        <span className={`badge`} style={{
+                                            background: isNA ? '#f3f4f6' : r.status === 'paid' ? 'var(--color-green-light)' : 'rgba(232,134,58,0.15)',
+                                            color: isNA ? '#999' : r.status === 'paid' ? 'var(--color-green)' : 'var(--color-saffron)',
+                                            padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5
+                                        }}>
+                                            {isNA ? '-' : statusIcon(r.status)} {isNA ? 'Not Applicable' : (t(`user.${r.status}`) || r.status.toUpperCase())}
+                                        </span>
+                                    </td>
+                                    <td style={{ color: isNA ? '#ccc' : 'inherit' }}>{r.paidDate}</td>
+                                    <td style={{ color: isNA ? '#ccc' : 'inherit' }}>{r.paidTime}</td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

@@ -20,22 +20,23 @@ import { getTaxAmount } from '../utils/pricing.js';
 export const createOrder = async (req, res) => {
     try {
         const { currency, receipt, notes } = req.body;
-        const shopId = notes?.shopId;
 
-        if (!shopId) {
-            return res.status(400).json({ message: 'Shop ID is required in notes.' });
-        }
+        // SECURE: Get user ID from the authentication token (auth_id)
+        const authId = req.user.id;
 
-        // 1. Fetch user business type
+        // 1. Fetch user profile from database using auth_id
         const { data: user, error: userError } = await supabase
             .from('users')
-            .select('business_type')
-            .eq('id', shopId)
+            .select('id, business_type')
+            .eq('auth_id', authId)
             .single();
 
         if (userError || !user) {
-            return res.status(404).json({ message: 'User business type not found.' });
+            console.error('[Payment Error] User not found for authId:', authId);
+            return res.status(404).json({ message: 'User profile not found in database.' });
         }
+
+        const shopId = user.id; // Correct database integer ID
 
         // 2. Fetch dynamic amount (with 2% penalty for late payments)
         const amount = await getTaxAmount(user.business_type, shopId, notes?.month);
