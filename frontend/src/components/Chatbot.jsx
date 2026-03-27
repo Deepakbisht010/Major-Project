@@ -124,33 +124,42 @@ const Chatbot = () => {
                     className={`chat-toggle ${isOpen ? 'open' : ''}`}
                     onClick={() => setIsOpen(!isOpen)}
                 >
-                    {isOpen ? <FiX size={28} /> : <FiMessageSquare size={28} />}
+                    <motion.div
+                        key={isOpen ? 'close' : 'open'}
+                        initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                        animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        {isOpen ? <FiX size={24} /> : <FiMessageSquare size={24} />}
+                    </motion.div>
                 </button>
             </div>
-            (1)             <AnimatePresence>
+
+            <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                        initial={{ opacity: 0, scale: 0.8, x: 20, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, x: 20, y: 20 }}
+                        transition={{ type: 'spring', damping: 20, stiffness: 300 }}
                         className="chat-window"
                     >
                         {/* Chat Header */}
                         <div className="chat-header">
-                            <div className="chat-header-info" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div className="chat-avatar" style={{ width: '45px', height: '45px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyItems: 'center', color: 'var(--color-maroon)', justifyContent: 'center', fontSize: '1.2rem' }}>
+                            <div className="chat-header-info">
+                                <div className="chat-avatar">
                                     <FiMessageSquare />
                                 </div>
-                                <div>
-                                    <h5 style={{ margin: 0, color: 'white', fontWeight: 800, fontSize: '1.1rem' }}>E-TaxPay Assistant</h5>
+                                <div style={{ position: 'relative', zIndex: 1 }}>
+                                    <h5 style={{ margin: 0, color: 'white', fontWeight: 800 }}>E-TaxPay Assistant</h5>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <span className="pulse-dot" style={{ width: '8px', height: '8px', background: '#4ade80', borderRadius: '50%' }}></span>
-                                        <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.75rem', fontWeight: 600 }}>ONLINE SUPPORT</span>
+                                        <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Online</span>
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={handleReset} className="reset-chat" title="Restart Chat" style={{ color: 'white', opacity: 0.8 }}>
-                                <FiRefreshCw />
+                            <button onClick={handleReset} className="reset-chat" title="Restart Chat">
+                                <FiRefreshCw size={18} />
                             </button>
                         </div>
 

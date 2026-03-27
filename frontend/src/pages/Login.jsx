@@ -172,7 +172,7 @@ export default function Login() {
                                 <>
                                     <div className="form-group" style={{ marginBottom: 20 }}>
                                         <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase' }}>Admin Username</label>
-                                        <input type="text" className="form-control" name="admin-user" required
+                                        <input type="text" className="form-control" name="admin-user-id" required
                                             placeholder="Enter Admin ID"
                                             autoComplete="off"
                                             style={{ height: 50, borderRadius: 12, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', fontWeight: 600 }}
@@ -181,16 +181,16 @@ export default function Login() {
                                     </div>
                                     <div className="form-group" style={{ marginBottom: 20 }}>
                                         <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase' }}>Password</label>
-                                        <input type="password" className="form-control" name="admin-pass" required
+                                        <input type="password" className="form-control" name="admin-secret-pass" required
                                             placeholder="••••••••"
-                                            autoComplete="current-password"
+                                            autoComplete="new-password"
                                             style={{ height: 50, borderRadius: 12, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', fontWeight: 600 }}
                                             value={adminForm.password}
                                             onChange={e => setAdminForm({ ...adminForm, password: e.target.value })} />
                                     </div>
                                     <div className="form-group" style={{ marginBottom: 25 }}>
                                         <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase' }}>Master Passkey</label>
-                                        <input type="password" className="form-control" name="admin-pk" required
+                                        <input type="password" className="form-control" name="admin-master-key" required
                                             placeholder="Enter 8-digit secure key"
                                             autoComplete="off"
                                             style={{ height: 50, borderRadius: 12, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', fontWeight: 600 }}

@@ -24,57 +24,38 @@ export default function NoticeGeneration() {
                 const response = await api.get('admin/users');
                 if (response.data.success) {
                     const fetchedUsers = response.data.users || [];
-
-                    // Filter unpaid users
                     const unpaid = fetchedUsers.filter(u => {
                         const hasUnpaidTaxes = u.taxes?.some(t => t.status === 'unpaid');
                         const hasPendingMonthly = u.monthly_taxes?.some(mt => mt.status === 'pending');
                         return hasUnpaidTaxes || hasPendingMonthly;
                     });
-
                     setUnpaidUsers(unpaid);
                     setAllUsers(fetchedUsers);
-
-                    if (fetchedUsers.length > 0) {
-                        setDistrict(fetchedUsers[0].district || 'Almora');
-                    }
+                    if (fetchedUsers.length > 0) setDistrict(fetchedUsers[0].district || 'Almora');
                 }
-            } catch (error) {
-                console.error("Failed to fetch users:", error);
-            } finally {
-                setLoading(false);
-            }
+            } catch (err) { console.error(err); } finally { setLoading(false); }
         };
         fetchData();
     }, []);
 
     const toggleUserSelection = (gst) => {
-        setSelectedUsers(prev => {
-            const newSelection = prev.includes(gst) ? prev.filter(g => g !== gst) : [...prev, gst];
-            return newSelection;
-        });
+        setSelectedUsers(prev => prev.includes(gst) ? prev.filter(g => g !== gst) : [...prev, gst]);
     };
 
     const toggleSelectAll = () => {
-        if (selectedUsers.length === unpaidUsers.length) {
-            setSelectedUsers([]);
-            setCurrentIndex(0);
-        } else {
-            setSelectedUsers(unpaidUsers.map(u => u.gst_id));
-        }
+        if (selectedUsers.length === unpaidUsers.length) setSelectedUsers([]);
+        else setSelectedUsers(unpaidUsers.map(u => u.gst_id));
     };
 
     const handleUpdatePreview = (idx) => {
         if (!selectedUsers[idx]) return;
         const user = unpaidUsers.find(u => u.gst_id === selectedUsers[idx]);
         if (!user) return;
-
         setPreview({
             user: user.username,
             gst: user.gst_id,
             month,
-            year,
-            text: `Dear ${user.username},\n\nThis is to inform you that your shop tax for the month of ${month} ${year} has not been received by the Zila Panchayat, ${district.charAt(0).toUpperCase() + district.slice(1)}.\n\nYou are hereby requested to make the payment within 7 days from the date of this notice to avoid additional penalty charges.\n\nGST ID: ${user.gst_id}\nAmount Due: ₹500 + applicable penalty\nDue Date: 15th ${month} ${year}\n\nPlease visit E-TaxPay portal or contact the Zila Panchayat office for payment.\n\nRegards,\nZila Panchayat Office\n${district.charAt(0).toUpperCase() + district.slice(1)}, Uttarakhand`
+            year
         });
         setCurrentIndex(idx);
     };
@@ -82,52 +63,22 @@ export default function NoticeGeneration() {
     const generateNotice = () => {
         if (selectedUsers.length === 0 || !month || !year) return;
         handleUpdatePreview(0);
-        setSentStatus({ show: false, message: '', type: 'success' });
     }
 
-    const nextPreview = () => {
-        const nextIdx = (currentIndex + 1) % selectedUsers.length;
-        handleUpdatePreview(nextIdx);
-    };
-
-    const prevPreview = () => {
-        const prevIdx = (currentIndex - 1 + selectedUsers.length) % selectedUsers.length;
-        handleUpdatePreview(prevIdx);
-    };
+    const nextPreview = () => handleUpdatePreview((currentIndex + 1) % selectedUsers.length);
+    const prevPreview = () => handleUpdatePreview((currentIndex - 1 + selectedUsers.length) % selectedUsers.length);
 
     const sendNotices = async () => {
         try {
-            const response = await api.post('admin/send-notices', {
-                selectedUsers,
-                month,
-                year,
-                text: preview.text
-            });
-
+            const response = await api.post('admin/send-notices', { selectedUsers, month, year });
             if (response.data.success) {
-                setSentStatus({
-                    show: true,
-                    message: `Official notices have been successfully dispatched to ${selectedUsers.length} users.`,
-                    type: 'success'
-                });
+                setSentStatus({ show: true, message: `Official notices dispatched to ${selectedUsers.length} users.`, type: 'success' });
                 setTimeout(() => setSentStatus({ show: false, message: '', type: 'success' }), 5000);
             }
-        } catch (error) {
-            console.error('Failed to send notices:', error);
-            setSentStatus({
-                show: true,
-                message: error.response?.data?.error || 'Failed to dispatch notices. Please ensure the backend table is ready.',
-                type: 'error'
-            });
-        }
+        } catch (err) { setSentStatus({ show: true, message: 'Failed to dispatch notices.', type: 'error' }); }
     }
 
-    if (loading) return (
-        <div style={{ padding: '2rem', textAlign: 'center' }}>
-            <div className="spinner"></div>
-            <p>Fetching user data from {district || 'system'}...</p>
-        </div>
-    );
+    if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}><div className="spinner"></div></div>;
 
     return (
         <div>
@@ -139,154 +90,102 @@ export default function NoticeGeneration() {
             <div className="grid-2">
                 <div className="card">
                     <h4 style={{ marginBottom: 20 }}>Notice Details</h4>
-
                     <div className="form-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                            <label style={{ margin: 0 }}>Select Defaulters ({selectedUsers.length})</label>
-                            {unpaidUsers.length > 0 && (
-                                <button className="btn btn-secondary btn-sm" onClick={toggleSelectAll} style={{ fontSize: '0.75rem', padding: '4px 10px' }}>
-                                    {selectedUsers.length === unpaidUsers.length ? 'Deselect All' : 'Select All'}
-                                </button>
-                            )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                            <label>Select Defaulters ({selectedUsers.length})</label>
+                            <button className="btn btn-secondary btn-sm" onClick={toggleSelectAll}>Select All</button>
                         </div>
-
-                        <div style={{
-                            maxHeight: 250,
-                            overflowY: 'auto',
-                            border: '1px solid #eee',
-                            borderRadius: '12px',
-                            padding: '12px',
-                            background: '#fcfcfc',
-                            marginBottom: 20,
-                            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-                        }}>
-                            {unpaidUsers.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#999' }}>
-                                    <FiCheckCircle size={32} style={{ marginBottom: 10, color: 'var(--color-green)' }} />
-                                    <p>Great! No unpaid users found in this district.</p>
-                                </div>
-                            ) : (
-                                unpaidUsers.map(u => (
-                                    <label key={u.gst_id} style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 12,
-                                        padding: '10px',
-                                        cursor: 'pointer',
-                                        borderRadius: '8px',
-                                        transition: 'all 0.2s',
-                                        marginBottom: 6,
-                                        border: selectedUsers.includes(u.gst_id) ? '1px solid var(--color-maroon)' : '1px solid transparent',
-                                        background: selectedUsers.includes(u.gst_id) ? 'rgba(128, 0, 0, 0.03)' : 'transparent'
-                                    }} className="user-item-hover">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedUsers.includes(u.gst_id)}
-                                            onChange={() => toggleUserSelection(u.gst_id)}
-                                            style={{ width: 18, height: 18, accentColor: 'var(--color-maroon)' }}
-                                        />
-                                        <div style={{ fontSize: '0.9rem' }}>
-                                            <strong style={{ color: 'var(--text-primary)' }}>{u.username}</strong>
-                                            <div style={{ fontSize: '0.75rem', color: '#666' }}>{u.gst_id} • {u.block}</div>
-                                        </div>
-                                    </label>
-                                ))
-                            )}
+                        <div style={{ maxHeight: 250, overflowY: 'auto', border: '1px solid #eee', borderRadius: '12px', padding: '12px', background: '#fcfcfc' }}>
+                            {unpaidUsers.map(u => (
+                                <label key={u.gst_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={selectedUsers.includes(u.gst_id)} onChange={() => toggleUserSelection(u.gst_id)} />
+                                    <span>{u.username} ({u.gst_id})</span>
+                                </label>
+                            ))}
                         </div>
                     </div>
-
                     <div className="auth-form-row">
-                        <div className="form-group">
-                            <label>Default Month</label>
-                            <select className="form-control" value={month} onChange={e => setMonth(e.target.value)}>
-                                <option value="">-- Select Month --</option>
-                                {months.map(m => <option key={m} value={m}>{m}</option>)}
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label>Year</label>
-                            <select className="form-control" value={year} onChange={e => setYear(e.target.value)}>
-                                <option value="2026">2026</option>
-                                <option value="2025">2025</option>
-                            </select>
-                        </div>
+                        <select className="form-control" value={month} onChange={e => setMonth(e.target.value)}>
+                            <option value="">Month</option>
+                            {months.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                        <select className="form-control" value={year} onChange={e => setYear(e.target.value)}>
+                            <option value="2026">2026</option>
+                        </select>
                     </div>
-
-                    <button
-                        className="btn btn-primary btn-lg"
-                        style={{ width: '100%', marginTop: 10 }}
-                        onClick={generateNotice}
-                        disabled={selectedUsers.length === 0 || !month}
-                    >
-                        {selectedUsers.length > 1 ? `Preview Collective Notice (${selectedUsers.length})` : 'Generate Notice Preview'}
-                    </button>
-
-                    {sentStatus.show && sentStatus.message.includes('successfully') && (
-                        <div className="alert alert-success" style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <FiMail size={24} />
-                            <div>
-                                <strong>Success:</strong> {sentStatus.message}
-                            </div>
-                        </div>
-                    )}
-                    {sentStatus.show && sentStatus.type === 'error' && (
-                        <div className="alert alert-error" style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <FiAlertCircle size={24} />
-                            <div>
-                                <strong>Error:</strong> {sentStatus.message}
-                            </div>
-                        </div>
-                    )}
+                    <button className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 15 }} onClick={generateNotice}>Preview Notice</button>
+                    {sentStatus.show && <div className={`alert alert-${sentStatus.type}`} style={{ marginTop: 20 }}>{sentStatus.message}</div>}
                 </div>
 
                 <div className="card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                        <h4 style={{ margin: 0 }}>Notice Template Preview</h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+                        <h4 style={{ margin: 0 }}>Notice Preview</h4>
                         {preview && selectedUsers.length > 1 && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <button className="btn btn-secondary btn-sm" onClick={prevPreview} style={{ padding: '2px 8px' }}><FiChevronLeft /></button>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>{currentIndex + 1} of {selectedUsers.length}</span>
-                                <button className="btn btn-secondary btn-sm" onClick={nextPreview} style={{ padding: '2px 8px' }}><FiChevronRight /></button>
+                            <div style={{ display: 'flex', gap: 10 }}>
+                                <button className="btn btn-secondary btn-sm" onClick={prevPreview}><FiChevronLeft /></button>
+                                <span>{currentIndex + 1} of {selectedUsers.length}</span>
+                                <button className="btn btn-secondary btn-sm" onClick={nextPreview}><FiChevronRight /></button>
                             </div>
                         )}
                     </div>
 
                     {preview ? (
                         <>
-                            <div style={{
-                                background: 'white',
-                                padding: 24,
-                                borderRadius: 16,
-                                border: '1px solid #f0f0f0',
-                                whiteSpace: 'pre-line',
-                                fontSize: '0.88rem',
-                                lineHeight: 1.7,
-                                color: '#333',
-                                maxHeight: 400,
-                                overflowY: 'auto',
-                                boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.04)'
+                            <div className="notice-document-preview" style={{
+                                background: '#fdfdfb',
+                                padding: '50px 40px',
+                                border: '1px solid #c0c0c0',
+                                position: 'relative',
+                                minHeight: '600px',
+                                boxShadow: '0 15px 45px rgba(0,0,0,0.1)',
+                                color: '#000',
+                                fontFamily: "'Georgia', serif",
+                                overflow: 'hidden'
                             }}>
-                                <div style={{ marginBottom: 20, paddingBottom: 15, borderBottom: '2px solid #f5f5f5', textAlign: 'center' }}>
-                                    <h5 style={{ margin: '0 0 5px 0', color: 'var(--color-maroon)', letterSpacing: '1px' }}>DEPARTMENT OF TAXATION</h5>
-                                    <small style={{ color: '#666', fontWeight: 'bold' }}>ZILA PANCHAYAT OFFICE, {district.toUpperCase()}</small>
+                                <div style={{ position: 'absolute', inset: '10px', border: '2px double #333', pointerEvents: 'none', zIndex: 2 }}></div>
+                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-35deg)', fontSize: '4.5rem', fontWeight: '900', color: 'rgba(0, 0, 0, 0.03)', zIndex: 0, textTransform: 'uppercase' }}>OFFICIAL</div>
+
+                                <div style={{ textAlign: 'center', marginBottom: 35, position: 'relative', zIndex: 3 }}>
+                                    <img src="/src/assets/logo.png" alt="Gov Emblem" style={{ width: 55, height: 55, marginBottom: 10 }} />
+                                    <h3 style={{ margin: '0 0 5px 0', fontSize: '1.4rem', fontWeight: '900' }}>DEPARTMENT OF PANCHAYATI RAJ</h3>
+                                    <h4 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', fontWeight: 'bold' }}>OFFICE OF ZILA PANCHAYAT, {district.toUpperCase()}</h4>
+                                    <h5 style={{ margin: 0, fontSize: '0.9rem', color: '#333', fontWeight: 'bold' }}>GOVERNMENT OF UTTARAKHAND</h5>
+                                    <div style={{ height: '3px', background: '#000', width: '70%', margin: '15px auto 20px' }}></div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                        <div style={{ textAlign: 'left' }}>Ref No: UK/ZP/{district.substring(0, 3).toUpperCase()}/2026/TAX/{Math.floor(100 + Math.random() * 900)}</div>
+                                        <div style={{ textAlign: 'right' }}>Date: {new Date().toLocaleDateString('en-GB')}</div>
+                                    </div>
                                 </div>
-                                {preview.text}
+
+                                <div style={{ position: 'relative', zIndex: 3, padding: '0 15px' }}>
+                                    <p style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: 25 }}>To,<br />The Proprietor / Manager,<br />M/s {preview.user}, <br />Business ID: {preview.gst}</p>
+                                    <div style={{ textAlign: 'center', background: '#f0f0f0', padding: '8px', marginBottom: 30, border: '1px solid #333' }}>
+                                        <p style={{ margin: 0, fontWeight: '900', textTransform: 'uppercase', fontSize: '0.9rem' }}>DEMAND NOTICE: ARREARS OF SHOP TAX - {month.toUpperCase()} {year}</p>
+                                    </div>
+                                    <p style={{ marginBottom: 20, textAlign: 'justify', lineHeight: '1.6' }}>On scrutiny of digital records, it has been observed that shop tax for period <strong>{month} {year}</strong> is outstanding. Under the provisions of Uttarakhand Local Government Act, it is mandatory to deposit dues on time.</p>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 25 }}>
+                                        <tbody>
+                                            <tr><td style={{ border: '1px solid #333', padding: '8px', background: '#f8f8f8', fontWeight: 'bold' }}>Total Principal Due</td><td style={{ border: '1px solid #333', padding: '8px' }}>₹500.00</td></tr>
+                                            <tr><td style={{ border: '1px solid #333', padding: '8px', background: '#f8f8f8', fontWeight: 'bold' }}>Due Date</td><td style={{ border: '1px solid #333', padding: '8px', fontWeight: 'bold', color: '#821D30' }}>Within 7 Days</td></tr>
+                                        </tbody>
+                                    </table>
+                                    <p style={{ marginBottom: 35, fontStyle: 'italic', fontSize: '0.88rem' }}>Failure to comply may lead to administrative action. This is computer-generated with e-signature appended.</p>
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 40, alignItems: 'flex-end' }}>
+                                        <div style={{ position: 'relative', width: 120, height: 120, opacity: 0.6 }}>
+                                            <div style={{ position: 'absolute', inset: 0, border: '2px solid #821D30', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#821D30', transform: 'rotate(-10deg)', fontWeight: '900', textAlign: 'center', fontSize: '0.6rem', padding: 5 }}>ZILA PANCHAYAT<br />UTTARAKHAND<br />OFFICIAL SEAL</div>
+                                        </div>
+                                        <div style={{ textAlign: 'center', zIndex: 5 }}>
+                                            <div style={{ fontStyle: 'italic', marginBottom: 5 }}>[Digitally Signed]</div>
+                                            <p style={{ fontSize: '0.9rem', fontWeight: 'bold', margin: 0 }}>Chief Executive Officer</p>
+                                            <p style={{ fontSize: '0.8rem', margin: 0 }}>Zila Panchayat Office, {district}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <button className="btn btn-green btn-lg" style={{ width: '100%', marginTop: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }} onClick={sendNotices}>
-                                <FiSend size={18} /> Send Official Notice ({selectedUsers.length})
-                            </button>
-                            {sentStatus.show && sentStatus.type === 'success' && !sentStatus.message.includes('successfully') && (
-                                <div className="alert alert-success" style={{ marginTop: 12 }}>
-                                    <FiCheckCircle /> {sentStatus.message}
-                                </div>
-                            )}
+                            <button className="btn btn-green btn-lg" style={{ width: '100%', marginTop: 20 }} onClick={sendNotices}><FiSend /> Send Official Notice ({selectedUsers.length})</button>
                         </>
-                    ) : (
-                        <div className="empty-state" style={{ padding: '80px 0', textAlign: 'center' }}>
-                            <div className="icon" style={{ fontSize: '3.5rem', marginBottom: 20, opacity: 0.5 }}>📩</div>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Select users and generate a preview to see personalization</p>
-                        </div>
-                    )}
+                    ) : <div style={{ padding: '80px 0', textAlign: 'center' }}>Select users to generate preview</div>}
                 </div>
             </div>
         </div>

@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiPlusCircle, FiTrash2, FiCheckCircle, FiAlertCircle, FiInfo } from 'react-icons/fi'
+import { FiPlusCircle, FiTrash2, FiCheckCircle, FiAlertCircle, FiInfo, FiTag, FiCalendar, FiMegaphone, FiX } from 'react-icons/fi'
 import api from '../../lib/api'
+
+const categoryIcons = {
+    "Tax Update": <FiTag />,
+    "Scheme": <FiCheckCircle />,
+    "Notice": <FiInfo />,
+    "Announcement": <FiMegaphone />
+}
 
 export default function GovUpdatesAdmin() {
     const { t } = useTranslation()
@@ -37,113 +44,150 @@ export default function GovUpdatesAdmin() {
                 setUpdates([res.data.update, ...updates]);
                 setForm({ title: '', content: '', category: 'Notice' });
                 setShowForm(false);
-                setAlert({ show: true, msg: 'Update published to all users in your district!', type: 'success' });
+                setAlert({ show: true, msg: 'Official update published successfully!', type: 'success' });
             }
         } catch (error) {
-            setAlert({ show: true, msg: 'Failed to publish. Ensure table exists.', type: 'error' });
+            setAlert({ show: true, msg: 'Failed to publish bulletin.', type: 'error' });
         }
         setTimeout(() => setAlert({ show: false }), 4000);
     }
 
     const deleteUpdate = async (id) => {
-        if (!window.confirm("Delete this update permanently?")) return;
+        if (!window.confirm("Are you sure you want to retract this official update?")) return;
         try {
             const res = await api.delete(`admin/gov-updates/${id}`);
             if (res.data.success) {
                 setUpdates(prev => prev.filter(u => u.id !== id));
             }
         } catch (error) {
-            alert("Failed to delete.");
+            alert("Retraction failed.");
         }
     }
 
-    if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading government updates...</div>;
+    if (loading) return <div style={{ padding: '4rem', textAlign: 'center' }}><div className="spinner"></div></div>;
 
     return (
-        <div>
-            <div className="page-header-actions">
+        <div style={{ position: 'relative' }}>
+            {/* Background Branding for Admin */}
+            <div style={{ position: 'absolute', top: '20%', right: '10%', fontSize: '15rem', opacity: 0.03, pointerEvents: 'none', transform: 'rotate(-15deg)', zIndex: 0 }}>
+                NEWS
+            </div>
+
+            <div className="page-header-actions" style={{ position: 'relative', zIndex: 1 }}>
                 <div className="page-header" style={{ marginBottom: 0 }}>
-                    <h2>{t('admin.govUpdates')}</h2>
-                    <p>Broadcast news and circulars to taxpayers in your jurisdiction</p>
+                    <h2 style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <FiMegaphone color="var(--color-maroon)" /> {t('admin.govUpdates')}
+                    </h2>
+                    <p>Official Bulletin Board: Broadcast circulars and news to all registered tax payers.</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-                    <FiPlusCircle size={16} /> {t('admin.postUpdate')}
-                </button>
+                {!showForm && (
+                    <button className="btn btn-maroon btn-lg reveal-scale" onClick={() => setShowForm(true)} style={{ boxShadow: '0 8px 20px rgba(130, 29, 48, 0.2)' }}>
+                        <FiPlusCircle size={20} /> Create New Bulletin
+                    </button>
+                )}
             </div>
 
             {alert.show && (
-                <div className={`alert alert-${alert.type}`} style={{ marginBottom: 20 }}>
+                <div className={`alert alert-${alert.type} reveal-fade`} style={{ margin: '20px 0', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
                     {alert.type === 'success' ? <FiCheckCircle /> : <FiAlertCircle />} {alert.msg}
                 </div>
             )}
 
             {showForm && (
-                <div className="card" style={{ marginBottom: 24, border: '1px solid var(--color-maroon-light)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                        <FiInfo color="var(--color-maroon)" />
-                        <h4 style={{ margin: 0 }}>Publish Official Update</h4>
+                <div className="card reveal" style={{ marginBottom: 30, border: '1px solid #e0e0e0', padding: 0, overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }}>
+                    <div style={{ background: '#f8f9fa', padding: '15px 25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee' }}>
+                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 900 }}>DRAFT OFFICIAL ANNOUNCEMENT</h4>
+                        <button className="btn btn-secondary btn-sm" style={{ padding: 5, borderRadius: '50%' }} onClick={() => setShowForm(false)}><FiX size={18} /></button>
                     </div>
-                    <form onSubmit={handlePublish}>
-                        <div className="form-group">
-                            <label>{t('admin.updateTitle')}</label>
-                            <input type="text" className="form-control" required value={form.title}
-                                onChange={e => setForm({ ...form, title: e.target.value })}
-                                placeholder="e.g. Revised Tax Rates for 2026" />
-                        </div>
-                        <div className="form-group">
-                            <label>Category</label>
-                            <select className="form-control" value={form.category}
-                                onChange={e => setForm({ ...form, category: e.target.value })}>
-                                <option value="Tax Update">Tax Update</option>
-                                <option value="Scheme">Scheme</option>
-                                <option value="Notice">Notice</option>
-                                <option value="Announcement">Announcement</option>
-                            </select>
+                    <form onSubmit={handlePublish} style={{ padding: '30px' }}>
+                        <div className="grid-2">
+                            <div className="form-group">
+                                <label style={{ fontWeight: 'bold', fontSize: '0.8rem', textTransform: 'uppercase', color: '#666' }}>Bulletin Title</label>
+                                <input type="text" className="form-control" required value={form.title}
+                                    style={{ padding: '12px', fontSize: '1rem', border: '2px solid #eee' }}
+                                    onChange={e => setForm({ ...form, title: e.target.value })}
+                                    placeholder="Brief title of the news..." />
+                            </div>
+                            <div className="form-group">
+                                <label style={{ fontWeight: 'bold', fontSize: '0.8rem', textTransform: 'uppercase', color: '#666' }}>Bulletin Category</label>
+                                <select className="form-control" value={form.category}
+                                    style={{ padding: '12px', background: '#fff', border: '2px solid #eee' }}
+                                    onChange={e => setForm({ ...form, category: e.target.value })}>
+                                    <option value="Tax Update">Tax Update (Policy)</option>
+                                    <option value="Scheme">Scheme (Gov Benefit)</option>
+                                    <option value="Notice">Legal Notice</option>
+                                    <option value="Announcement">General Announcement</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <div className="form-group">
-                            <label>{t('admin.updateContent')}</label>
+                        <div className="form-group" style={{ marginTop: 20 }}>
+                            <label style={{ fontWeight: 'bold', fontSize: '0.8rem', textTransform: 'uppercase', color: '#666' }}>Official Content / Body</label>
                             <textarea className="form-control" required value={form.content}
+                                style={{ padding: '15px', fontSize: '1rem', border: '2px solid #eee', borderRadius: '12px' }}
                                 onChange={e => setForm({ ...form, content: e.target.value })}
-                                placeholder="Explain the update in detail..." rows={4}></textarea>
+                                placeholder="Write the full update text here. Taxpayers will see this on their dashboard news feed..." rows={5}></textarea>
                         </div>
-                        <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
-                            <button type="submit" className="btn btn-maroon">{t('admin.publish')}</button>
-                            <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>{t('common.cancel')}</button>
+                        <div style={{ display: 'flex', gap: 12, marginTop: 25, justifyContent: 'flex-end' }}>
+                            <button type="button" className="btn btn-secondary" style={{ padding: '12px 25px' }} onClick={() => setShowForm(false)}>{t('common.cancel')}</button>
+                            <button type="submit" className="btn btn-maroon btn-lg" style={{ padding: '12px 40px', fontWeight: 700 }}>
+                                <FiMegaphone size={18} style={{ marginRight: 8 }} /> PUBLISH BULLETIN
+                            </button>
                         </div>
                     </form>
                 </div>
             )}
 
-            <div style={{ display: 'grid', gap: 15 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(450px, 1fr))', gap: 20, zIndex: 1, position: 'relative' }}>
                 {updates.length === 0 ? (
-                    <div className="card" style={{ textAlign: 'center', padding: '60px 20px', color: '#999' }}>
-                        <p>No updates published yet. Use the button above to broadcast your first update.</p>
+                    <div className="card" style={{ textAlign: 'center', padding: '60px 20px', color: '#999', gridColumn: '1 / -1' }}>
+                        <FiInfo size={40} style={{ opacity: 0.1, marginBottom: 15 }} />
+                        <p>No official updates records exist in the system yet.</p>
                     </div>
                 ) : (
-                    updates.map(update => (
-                        <div key={update.id} className="update-card" style={{
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                            borderLeft: '4px solid var(--color-maroon)'
+                    updates.map((update, idx) => (
+                        <div key={update.id} className="card reveal" style={{
+                            display: 'flex', gap: 20, borderTop: '4px solid var(--color-maroon)',
+                            padding: '25px', borderRadius: '16px', position: 'relative', overflow: 'hidden',
+                            transition: 'transform 0.2s', animationDelay: `${idx * 0.1}s`
                         }}>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                    <span className="badge badge-maroon" style={{ fontSize: '0.7rem' }}>{update.category}</span>
-                                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                                        {new Date(update.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                    </span>
-                                </div>
-                                <h4 style={{ marginBottom: 8 }}>{update.title}</h4>
-                                <p style={{ fontSize: '0.92rem', color: '#555', lineHeight: 1.5 }}>{update.content}</p>
+                            <div style={{
+                                width: 50, height: 50, borderRadius: '12px', background: 'rgba(130, 29, 48, 0.05)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-maroon)',
+                                flexShrink: 0, fontSize: '1.2rem'
+                            }}>
+                                {categoryIcons[update.category] || <FiInfo />}
                             </div>
-                            <button className="btn btn-icon btn-secondary" onClick={() => deleteUpdate(update.id)}
-                                style={{ flexShrink: 0, marginLeft: 15 }} title="Delete Update">
-                                <FiTrash2 size={16} color="var(--color-maroon)" />
-                            </button>
+
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 900, background: '#fef2f2', color: 'var(--color-maroon)', padding: '4px 10px', borderRadius: '4px', textTransform: 'uppercase' }}>
+                                        {update.category}
+                                    </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', color: '#999' }}>
+                                        <FiCalendar size={12} /> {new Date(update.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </div>
+                                </div>
+                                <h4 style={{ fontSize: '1.1rem', marginBottom: 10, lineHeight: 1.4, color: '#1a1a1a' }}>{update.title}</h4>
+                                <p style={{ fontSize: '0.9rem', color: '#666', lineHeight: 1.6, marginBottom: 15, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                    {update.content}
+                                </p>
+
+                                <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 15, display: 'flex', justifyContent: 'flex-end' }}>
+                                    <button className="btn btn-icon btn-secondary" onClick={() => deleteUpdate(update.id)}
+                                        style={{ color: '#ef4444', height: '32px', width: '32px' }} title="Retract Bulletin">
+                                        <FiTrash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     ))
                 )}
             </div>
+
+            <style jsx>{`
+                .update-card:hover { transform: translateY(-5px); }
+            `}</style>
         </div>
     )
 }

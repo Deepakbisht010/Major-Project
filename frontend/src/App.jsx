@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useEffect } from 'react'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 
 // Pages
@@ -30,8 +30,6 @@ import AuditLogs from './pages/admin/AuditLogs'
 import GovUpdatesAdmin from './pages/admin/GovUpdatesAdmin'
 
 function AppRoutes() {
-    const { isAuthenticated, isAdmin, isUser } = useAuth()
-
     return (
         <Routes>
             {/* Public Routes */}
@@ -95,13 +93,11 @@ function ScrollRevealEffect() {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('visible');
                 } else {
-                    // Repeat animation by removing class when out of view
                     entry.target.classList.remove('visible');
                 }
             });
         }, observerOptions);
 
-        // Function to observe all current .reveal elements
         const observeElements = () => {
             const revealElements = document.querySelectorAll('.reveal, .reveal-scale, .reveal-left');
             revealElements.forEach(el => observer.observe(el));
@@ -109,7 +105,6 @@ function ScrollRevealEffect() {
 
         observeElements();
 
-        // Re-observe if content changes (Dynamic data loading)
         const mutationObserver = new MutationObserver(() => {
             observeElements();
         });
