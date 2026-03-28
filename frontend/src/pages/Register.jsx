@@ -327,14 +327,14 @@ export default function Register() {
                                 <div style={{ animation: 'slideIn 0.4s' }}>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15, marginBottom: 20 }}>
                                         <div style={{ textAlign: 'center' }}>
-                                            <label style={{ display: 'block', width: '100%', height: 100, borderRadius: 16, border: '2px dashed var(--border-color)', background: shopFile ? 'var(--color-green-light)' : 'var(--bg-secondary)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                            <label style={{ width: '100%', height: 100, borderRadius: 16, border: '2px dashed var(--border-color)', background: shopFile ? 'var(--color-green-light)' : 'var(--bg-secondary)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                                                 <input type="file" style={{ display: 'none' }} accept="image/*" onChange={e => setShopFile(e.target.files[0])} />
                                                 <FiCamera size={20} color={shopFile ? 'var(--color-green)' : 'var(--text-muted)'} />
                                                 <span style={{ fontSize: '0.65rem', fontWeight: 700, marginTop: 5 }}>SHOP PHOTO</span>
                                             </label>
                                         </div>
                                         <div style={{ textAlign: 'center' }}>
-                                            <label style={{ display: 'block', width: '100%', height: 100, borderRadius: 16, border: '2px dashed var(--border-color)', background: userFile ? 'var(--color-green-light)' : 'var(--bg-secondary)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                            <label style={{ width: '100%', height: 100, borderRadius: 16, border: '2px dashed var(--border-color)', background: userFile ? 'var(--color-green-light)' : 'var(--bg-secondary)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                                                 <input type="file" style={{ display: 'none' }} accept="image/*" onChange={e => setUserFile(e.target.files[0])} />
                                                 <FiCamera size={20} color={userFile ? 'var(--color-green)' : 'var(--text-muted)'} />
                                                 <span style={{ fontSize: '0.65rem', fontWeight: 700, marginTop: 5 }}>OWNER PHOTO</span>

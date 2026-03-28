@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiPlusCircle, FiTrash2, FiCheckCircle, FiAlertCircle, FiInfo, FiTag, FiCalendar, FiMegaphone, FiX } from 'react-icons/fi'
+import { FiPlusCircle, FiTrash2, FiCheckCircle, FiAlertCircle, FiInfo, FiTag, FiCalendar, FiX } from 'react-icons/fi'
+import { FaBullhorn } from 'react-icons/fa'
 import api from '../../lib/api'
 
 const categoryIcons = {
     "Tax Update": <FiTag />,
     "Scheme": <FiCheckCircle />,
     "Notice": <FiInfo />,
-    "Announcement": <FiMegaphone />
+    "Announcement": <FaBullhorn />
 }
 
 export default function GovUpdatesAdmin() {
@@ -76,7 +77,7 @@ export default function GovUpdatesAdmin() {
             <div className="page-header-actions" style={{ position: 'relative', zIndex: 1 }}>
                 <div className="page-header" style={{ marginBottom: 0 }}>
                     <h2 style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <FiMegaphone color="var(--color-maroon)" /> {t('admin.govUpdates')}
+                        <FaBullhorn color="var(--color-maroon)" /> {t('admin.govUpdates')}
                     </h2>
                     <p>Official Bulletin Board: Broadcast circulars and news to all registered tax payers.</p>
                 </div>
@@ -131,7 +132,7 @@ export default function GovUpdatesAdmin() {
                         <div style={{ display: 'flex', gap: 12, marginTop: 25, justifyContent: 'flex-end' }}>
                             <button type="button" className="btn btn-secondary" style={{ padding: '12px 25px' }} onClick={() => setShowForm(false)}>{t('common.cancel')}</button>
                             <button type="submit" className="btn btn-maroon btn-lg" style={{ padding: '12px 40px', fontWeight: 700 }}>
-                                <FiMegaphone size={18} style={{ marginRight: 8 }} /> PUBLISH BULLETIN
+                                <FaBullhorn size={18} style={{ marginRight: 8 }} /> PUBLISH BULLETIN
                             </button>
                         </div>
                     </form>
