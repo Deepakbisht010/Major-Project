@@ -72,9 +72,9 @@ e-taxpay/
 
 ## 🛡️ Admin Credentials
 The system supports **Super Admin** and **District Admins** for all 13 districts of Uttarakhand.
-- **Super Admin ID**: `superadmin`
-- **Default Password**: `superadmin@2026`
-- **Master Passkey**: `ADMIN2026`
+- **Super Admin ID**: `super****`
+- **Default Password**: `super******`
+- **Master Passkey**: `ADMIN*****`
 
 ---
 
