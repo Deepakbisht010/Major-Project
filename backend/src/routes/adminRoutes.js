@@ -13,7 +13,7 @@ import {
     getAdminProfile,
     updateAdminProfile
 } from '../controllers/adminController.js';
-import { requireAuth, requireAdmin } from '../middleware/authMiddleware.js';  
+import { requireAuth, requireAdmin } from '../middleware/authMiddleware.js';   
 
 const router = express.Router();
 
