@@ -1,5 +1,5 @@
 import { supabase } from '../config/supabase.js';      
-import { generateTaxesForUser } from '../utils/taxGenerator.js'; 
+import { generateTaxesForUser } from '../utils/taxGenerator.js';  
 import { sendHelpEmail } from '../utils/mailer.js';   
  
 export const sendHelpEmailRequest = async (req, res) => {
