@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom' 
 import { useTranslation } from 'react-i18next'  
 import { useEffect } from 'react'
 import { AuthProvider } from './context/AuthContext'
