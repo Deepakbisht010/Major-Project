@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next' 
 import { Link } from 'react-router-dom'
 import { FiMail, FiPhone, FiMapPin } from 'react-icons/fi'
 import { FaFacebook, FaTwitter, FaInstagram, FaYoutube } from 'react-icons/fa'
