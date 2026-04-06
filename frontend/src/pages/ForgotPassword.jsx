@@ -1,6 +1,6 @@
 import { useState } from 'react' 
 import { Link } from 'react-router-dom' 
-import Navbar from '../components/Navbar'
+import Navbar from '../components/Navbar' 
 import {
     FiShield, FiSmartphone, FiKey, FiLock,
     FiCheckCircle, FiAlertTriangle, FiCopy, FiCheck,
