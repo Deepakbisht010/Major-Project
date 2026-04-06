@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react' 
 import { FiRefreshCw } from 'react-icons/fi'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion' 
 
 // Generate random alphanumeric string like Ar45DeSt
 function generateCaptcha() {
