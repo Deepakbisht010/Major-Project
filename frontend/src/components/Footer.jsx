@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'
 export default function Footer() {
     const { t } = useTranslation()
 
-    const containerVariants = {
+    const containerVariants = { 
         hidden: { opacity: 0, y: 30 },
         visible: {
             opacity: 1,
