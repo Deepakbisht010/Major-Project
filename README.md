@@ -4,7 +4,7 @@
 
 ---
 
-## 🚀 Key Features  
+## 🚀 Key Features   
 
 - **Admin Dashboard**: Real-time analytics, revenue tracking, and district-wise tax metrics.
 - **Taxpayer Panel**: Secure login for shop owners to view pending taxes and make online payments.
