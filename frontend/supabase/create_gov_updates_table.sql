@@ -1,4 +1,4 @@
--- SQL to create government_updates table  
+-- SQL to create government_updates table   
 CREATE TABLE IF NOT EXISTS public.government_updates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
