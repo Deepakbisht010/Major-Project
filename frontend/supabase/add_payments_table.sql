@@ -1,4 +1,4 @@
- 
+  
 -- 3. Create the 'payments' table to track Razorpay transactions
 CREATE TABLE public.payments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
