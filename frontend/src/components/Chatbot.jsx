@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiMessageSquare, FiX, FiSend, FiRefreshCw, FiHelpCircle } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ChatLink = ({ children, onClick }) => (
+const ChatLink = ({ children, onClick }) => ( 
     <button
         onClick={onClick}
         className="chat-suggestion"
