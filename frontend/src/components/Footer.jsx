@@ -4,20 +4,7 @@ import { FiMail, FiPhone, FiMapPin } from 'react-icons/fi'
 import { FaFacebook, FaTwitter, FaInstagram, FaYoutube } from 'react-icons/fa'
 import { motion } from 'framer-motion'
 
-export default function Footer() { 
-    const { t } = useTranslation()
 
-    const containerVariants = { 
-        hidden: { opacity: 0, y: 30 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.6,
-                staggerChildren: 0.1
-            }
-        }
-    }
 
     const itemVariants = {
         hidden: { opacity: 0, y: 20 },
