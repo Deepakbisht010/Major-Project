@@ -58,4 +58,19 @@ export const requireAdmin = async (req, res, next) => {
     }
 
     // Check if the user's role is admin from their user metadata
+      const userRole = req.user.user_metadata?.role;
+
+    const validRoles = ['admin', 'super_admin', 'district_admin'];
+
+    if (!validRoles.includes(userRole)) {
+      return res.status(403).json({ error: 'Forbidden: Admin access required.' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Admin Middleware Error:', error);
+    res.status(500).json({ error: 'Internal server error during authorization.' });
+  }
+};
+
   
