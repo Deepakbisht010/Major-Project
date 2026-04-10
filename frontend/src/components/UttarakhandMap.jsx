@@ -1,4 +1,4 @@
-import uttarakhandMapImg from '../assets/uttarakhand-map.png' 
+import uttarakhandMapImg from '../assets/uttarakhand-map.png'   
 
 export default function UttarakhandMap() {
     return (
