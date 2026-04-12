@@ -1,6 +1,0 @@
-﻿README.md
-backend/data/adminProfiles.json
-backend/src/controllers/authController.js
-backend/src/routes/adminRoutes.js
-frontend/index.html
-frontend/src/pages/Register.jsx
