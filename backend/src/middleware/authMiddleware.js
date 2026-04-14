@@ -16,6 +16,24 @@ export const requireAuth = async (req, res, next) => {
 
     // --- Demo logic for development (handles district-specific fake tokens) ---
 
+        if (token.startsWith('demo-fake-admin-jwt-token')) {
+      const payload = token.replace('demo-fake-admin-jwt-token-', '');
+      // New format: "Username|district", Old format: just "district"
+      let username = '', district = 'all';
+      if (payload.includes('|')) {
+        [username, district] = payload.split('|');
+      } else {
+        // Old token format - just has district. Username is unknown.
+        district = payload;
+        username = ''; // will trigger district-based lookup on profile endpoint
+      }
+      req.user = {
+        id: 'demo-admin-id',
+        user_metadata: { role: 'admin', district: district || 'all', username: username },
+        email: 'admin@example.com'
+      };
+      return next();
+    }
     // ------------------------------------
 
     const { data: { user }, error } = await supabase.auth.getUser(token);
