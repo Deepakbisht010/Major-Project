@@ -45,20 +45,20 @@ IMPORTANT RULES FOR YOUR RESPONSES:
 
 export const getBotResponse = async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
-    const modelName = process.env.GEMINI_MODEL || "gemini-1.5-flash"; // Stable default
+    const modelName = process.env.GEMINI_MODEL || "models/gemini-1.5-flash-latest";
     const message = req.body.message || "Hello";
     let history = req.body.history || [];
+
+    if (!apiKey) {
+        return res.status(500).json({ success: false, error: "Server configuration error: API key missing." });
+    }
 
     // Gemini requirement: First message in history must be from 'user'
     if (history.length > 0 && history[0].role === 'model') {
         history = history.slice(1);
     }
 
-    if (!apiKey) {
-        return res.status(500).json({ success: false, error: "Server configuration error: API key missing." });
-    }
-
-    // Primary model
+    // Primary attempt
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
@@ -66,10 +66,8 @@ export const getBotResponse = async (req, res) => {
             systemInstruction: SYSTEM_PROMPT
         });
 
-        console.log(`[Chatbot] Requesting ${modelName} with history...`);
-        const chat = model.startChat({
-            history: history,
-        });
+        console.log(`[Chatbot] Requesting ${modelName}...`);
+        const chat = model.startChat({ history });
 
         const result = await chat.sendMessage(message);
         const text = result.response.text();
@@ -78,35 +76,30 @@ export const getBotResponse = async (req, res) => {
         return res.status(200).json({ success: true, text });
 
     } catch (primaryError) {
-        console.warn(`[Chatbot] ⚠️ Primary (${modelName}) failed:`, primaryError.message);
-        if (primaryError.response) console.error("Full error response:", primaryError.response);
-    }
+        console.error(`[Chatbot] ⚠️ Primary (${modelName}) failed:`, primaryError.message);
 
-    // Fallback model
-    try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const fallback = genAI.getGenerativeModel({
-            model: "gemini-1.5-pro",
-            systemInstruction: SYSTEM_PROMPT
-        });
+        // Final Fallback attempt with the most common stable name
+        try {
+            console.log(`[Chatbot] Trying final fallback: models/gemini-1.5-flash...`);
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const fallbackModel = genAI.getGenerativeModel({
+                model: "models/gemini-1.5-flash",
+                systemInstruction: SYSTEM_PROMPT
+            });
 
-        console.log(`[Chatbot] Trying fallback: gemini-1.5-pro...`);
-        const chat = fallback.startChat({
-            history: history,
-        });
+            const chat = fallbackModel.startChat({ history });
+            const result = await chat.sendMessage(message);
+            const text = result.response.text();
 
-        const result = await chat.sendMessage(message);
-        const text = result.response.text();
+            console.log("[Chatbot] ✅ Fallback success with models/gemini-1.5-flash");
+            return res.status(200).json({ success: true, text });
 
-        console.log("[Chatbot] ✅ Fallback success with gemini-1.5-pro");
-        return res.status(200).json({ success: true, text });
-
-    } catch (fallbackError) {
-        console.error("[Chatbot] ❌ ALL MODELS FAILED:", fallbackError.message);
-        if (fallbackError.response) console.error("Full fallback error response:", fallbackError.response);
-        return res.status(500).json({
-            success: false,
-            error: `Chatbot is temporarily unavailable. Error: ${fallbackError.message}`
-        });
+        } catch (fallbackError) {
+            console.error("[Chatbot] ❌ ALL MODELS FAILED:", fallbackError.message);
+            return res.status(500).json({
+                success: false,
+                error: `Chatbot error: ${fallbackError.message}. Please check your API key.`
+            });
+        }
     }
 };
