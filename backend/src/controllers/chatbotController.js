@@ -58,15 +58,15 @@ export const getBotResponse = async (req, res) => {
         history = history.slice(1);
     }
 
-    // Primary attempt
+    // Primary attempt with apiVersion: 'v1'
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-            model: modelName,
-            systemInstruction: SYSTEM_PROMPT
-        });
+        const model = genAI.getGenerativeModel(
+            { model: modelName, systemInstruction: SYSTEM_PROMPT },
+            { apiVersion: 'v1' }
+        );
 
-        console.log(`[Chatbot] Requesting ${modelName}...`);
+        console.log(`[Chatbot] Requesting ${modelName} (v1)...`);
         const chat = model.startChat({ history });
 
         const result = await chat.sendMessage(message);
@@ -78,14 +78,14 @@ export const getBotResponse = async (req, res) => {
     } catch (primaryError) {
         console.error(`[Chatbot] ⚠️ Primary (${modelName}) failed:`, primaryError.message);
 
-        // Final Fallback attempt with the most common stable name: 'gemini-pro'
+        // Final Fallback attempt with gemini-pro (v1)
         try {
-            console.log(`[Chatbot] Trying final fallback: gemini-pro...`);
+            console.log(`[Chatbot] Trying final fallback: gemini-pro (v1)...`);
             const genAI = new GoogleGenerativeAI(apiKey);
-            const fallbackModel = genAI.getGenerativeModel({
-                model: "gemini-pro",
-                systemInstruction: SYSTEM_PROMPT
-            });
+            const fallbackModel = genAI.getGenerativeModel(
+                { model: "gemini-pro", systemInstruction: SYSTEM_PROMPT },
+                { apiVersion: 'v1' }
+            );
 
             const chat = fallbackModel.startChat({ history });
             const result = await chat.sendMessage(message);
@@ -98,7 +98,7 @@ export const getBotResponse = async (req, res) => {
             console.error("[Chatbot] ❌ ALL MODELS FAILED:", fallbackError.message);
             return res.status(500).json({
                 success: false,
-                error: `Chatbot error: ${fallbackError.message}. Please check if your API key is correct.`
+                error: `Chatbot error: ${fallbackError.message}`
             });
         }
     }
