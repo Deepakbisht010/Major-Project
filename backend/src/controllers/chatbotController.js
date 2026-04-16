@@ -45,7 +45,7 @@ IMPORTANT RULES FOR YOUR RESPONSES:
 
 export const getBotResponse = async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
-    const modelName = process.env.GEMINI_MODEL || "models/gemini-1.5-flash-latest";
+    const modelName = process.env.GEMINI_MODEL || "gemini-1.5-flash";
     const message = req.body.message || "Hello";
     let history = req.body.history || [];
 
@@ -78,12 +78,12 @@ export const getBotResponse = async (req, res) => {
     } catch (primaryError) {
         console.error(`[Chatbot] ⚠️ Primary (${modelName}) failed:`, primaryError.message);
 
-        // Final Fallback attempt with the most common stable name
+        // Final Fallback attempt with the most common stable name: 'gemini-pro'
         try {
-            console.log(`[Chatbot] Trying final fallback: models/gemini-1.5-flash...`);
+            console.log(`[Chatbot] Trying final fallback: gemini-pro...`);
             const genAI = new GoogleGenerativeAI(apiKey);
             const fallbackModel = genAI.getGenerativeModel({
-                model: "models/gemini-1.5-flash",
+                model: "gemini-pro",
                 systemInstruction: SYSTEM_PROMPT
             });
 
@@ -91,14 +91,14 @@ export const getBotResponse = async (req, res) => {
             const result = await chat.sendMessage(message);
             const text = result.response.text();
 
-            console.log("[Chatbot] ✅ Fallback success with models/gemini-1.5-flash");
+            console.log("[Chatbot] ✅ Fallback success with gemini-pro");
             return res.status(200).json({ success: true, text });
 
         } catch (fallbackError) {
             console.error("[Chatbot] ❌ ALL MODELS FAILED:", fallbackError.message);
             return res.status(500).json({
                 success: false,
-                error: `Chatbot error: ${fallbackError.message}. Please check your API key.`
+                error: `Chatbot error: ${fallbackError.message}. Please check if your API key is correct.`
             });
         }
     }
