@@ -47,7 +47,12 @@ export const getBotResponse = async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
     const modelName = process.env.GEMINI_MODEL || "gemini-1.5-flash"; // Stable default
     const message = req.body.message || "Hello";
-    const history = req.body.history || [];
+    let history = req.body.history || [];
+
+    // Gemini requirement: First message in history must be from 'user'
+    if (history.length > 0 && history[0].role === 'model') {
+        history = history.slice(1);
+    }
 
     if (!apiKey) {
         return res.status(500).json({ success: false, error: "Server configuration error: API key missing." });
@@ -73,7 +78,8 @@ export const getBotResponse = async (req, res) => {
         return res.status(200).json({ success: true, text });
 
     } catch (primaryError) {
-        console.warn(`[Chatbot] ⚠️ Primary (${modelName}) failed: ${primaryError.message}`);
+        console.warn(`[Chatbot] ⚠️ Primary (${modelName}) failed:`, primaryError.message);
+        if (primaryError.response) console.error("Full error response:", primaryError.response);
     }
 
     // Fallback model
@@ -97,9 +103,10 @@ export const getBotResponse = async (req, res) => {
 
     } catch (fallbackError) {
         console.error("[Chatbot] ❌ ALL MODELS FAILED:", fallbackError.message);
+        if (fallbackError.response) console.error("Full fallback error response:", fallbackError.response);
         return res.status(500).json({
             success: false,
-            error: "Chatbot is temporarily unavailable. Please try again later."
+            error: `Chatbot is temporarily unavailable. Error: ${fallbackError.message}`
         });
     }
 };
