@@ -45,7 +45,7 @@ IMPORTANT RULES FOR YOUR RESPONSES:
 
 export const getBotResponse = async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
-    const modelName = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+    const modelName = process.env.GEMINI_MODEL || "models/gemini-2.0-flash";
     const message = req.body.message || "Hello";
     let history = req.body.history || [];
 
@@ -58,7 +58,7 @@ export const getBotResponse = async (req, res) => {
         history = history.slice(1);
     }
 
-    // Primary attempt with apiVersion: 'v1'
+    // Primary attempt (v1)
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel(
@@ -78,12 +78,12 @@ export const getBotResponse = async (req, res) => {
     } catch (primaryError) {
         console.error(`[Chatbot] ⚠️ Primary (${modelName}) failed:`, primaryError.message);
 
-        // Final Fallback attempt with gemini-pro (v1)
+        // Final Fallback attempt (v1)
         try {
-            console.log(`[Chatbot] Trying final fallback: gemini-pro (v1)...`);
+            console.log(`[Chatbot] Trying final fallback: models/gemini-2.5-flash-lite (v1)...`);
             const genAI = new GoogleGenerativeAI(apiKey);
             const fallbackModel = genAI.getGenerativeModel(
-                { model: "gemini-pro", systemInstruction: SYSTEM_PROMPT },
+                { model: "models/gemini-2.5-flash-lite", systemInstruction: SYSTEM_PROMPT },
                 { apiVersion: 'v1' }
             );
 
@@ -91,7 +91,7 @@ export const getBotResponse = async (req, res) => {
             const result = await chat.sendMessage(message);
             const text = result.response.text();
 
-            console.log("[Chatbot] ✅ Fallback success with gemini-pro");
+            console.log("[Chatbot] ✅ Fallback success with gemini-2.5-flash-lite");
             return res.status(200).json({ success: true, text });
 
         } catch (fallbackError) {
