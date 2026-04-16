@@ -83,4 +83,4 @@ This project is part of a digital transformation initiative for the Uttarakhand 
 
 © 2026 E-TaxPay Team.
 
-Last Updated: 2026-04-13 20:48 (Antigravity Update)
+Last Updated: 2026-04-13 20:48
