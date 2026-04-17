@@ -33,21 +33,22 @@ ADMIN FEATURES (for officers only):
 - Manage user accounts.
 
 IMPORTANT RULES FOR YOUR RESPONSES:
-- Be highly friendly, welcoming, and polite in your tone. 🌟
-- ALWAYS use well-formatted bullet points (start with * or - or 1.) when listing steps, rules, or multiple items.
-- Sprinkle relevant, essential emojis (like 💳, 📝, ✅, 🏛️, 📊) thoughtfully to make the message visually engaging and easy to read. Don't overdo it.
-- Format important terms and button names in **bold** to make them stand out (e.g., **Pay Now**, **Dashboard**).
-- Organize your answers into short, readable paragraphs instead of a single large block of text.
-- Always answer questions specifically related to E-TaxPay, Uttarakhand trade tax, or using this platform. If asked general tax questions, relate them to this platform.
-- If you don't know something specific about a user's account, politely tell them to contact support at **deepakbisht4050@gmail.com**.
+- Be highly friendly, welcoming, and polite in your tone.
+- ALWAYS use well-formatted bullet points when listing steps, rules, or multiple items.
+- Format important terms in **bold** to make them stand out.
+- Organize your answers into short, readable paragraphs.
+- Always answer questions specifically related to E-TaxPay, Uttarakhand trade tax, or using this platform.
+- If you don't know something specific about a user's account, politely tell them to contact support at deepakbisht4050@gmail.com.
 - You can respond in Hindi or English based on what the user writes.
 - Never make up specific amounts, dates, or government rules that you're unsure about.`;
 
 export const getBotResponse = async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
-    const modelName = process.env.GEMINI_MODEL || "models/gemini-2.0-flash";
+    const modelName = process.env.GEMINI_MODEL || "gemini-1.5-flash";
     const message = req.body.message || "Hello";
     let history = req.body.history || [];
+
+    console.log(`[Chatbot] Using model: ${modelName}, API Key starts with: ${apiKey?.substring(0, 8)}...`);
 
     if (!apiKey) {
         return res.status(500).json({ success: false, error: "Server configuration error: API key missing." });
@@ -58,48 +59,43 @@ export const getBotResponse = async (req, res) => {
         history = history.slice(1);
     }
 
-    // Primary attempt (v1)
+    // Prepend system prompt as first user message for compatibility
+    const fullHistory = [
+        { role: 'user', parts: [{ text: `SYSTEM INSTRUCTIONS: ${SYSTEM_PROMPT}` }] },
+        { role: 'model', parts: [{ text: "Understood. I am the E-TaxPay Assistant, ready to help!" }] },
+        ...history
+    ];
+
+    // Try primary model
     try {
+        console.log(`[Chatbot] Requesting ${modelName}...`);
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel(
-            { model: modelName, systemInstruction: SYSTEM_PROMPT },
-            { apiVersion: 'v1' }
-        );
-
-        console.log(`[Chatbot] Requesting ${modelName} (v1)...`);
-        const chat = model.startChat({ history });
-
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const chat = model.startChat({ history: fullHistory });
         const result = await chat.sendMessage(message);
         const text = result.response.text();
-
-        console.log(`[Chatbot] ✅ Success with ${modelName}`);
+        console.log(`[Chatbot] SUCCESS with ${modelName}`);
         return res.status(200).json({ success: true, text });
-
     } catch (primaryError) {
-        console.error(`[Chatbot] ⚠️ Primary (${modelName}) failed:`, primaryError.message);
+        console.error(`[Chatbot] Primary (${modelName}) FAILED:`, primaryError.message);
+    }
 
-        // Final Fallback attempt (v1)
-        try {
-            console.log(`[Chatbot] Trying final fallback: models/gemini-2.5-flash-lite (v1)...`);
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const fallbackModel = genAI.getGenerativeModel(
-                { model: "models/gemini-2.5-flash-lite", systemInstruction: SYSTEM_PROMPT },
-                { apiVersion: 'v1' }
-            );
-
-            const chat = fallbackModel.startChat({ history });
-            const result = await chat.sendMessage(message);
-            const text = result.response.text();
-
-            console.log("[Chatbot] ✅ Fallback success with gemini-2.5-flash-lite");
-            return res.status(200).json({ success: true, text });
-
-        } catch (fallbackError) {
-            console.error("[Chatbot] ❌ ALL MODELS FAILED:", fallbackError.message);
-            return res.status(500).json({
-                success: false,
-                error: `Chatbot error: ${fallbackError.message}`
-            });
-        }
+    // Try fallback model
+    try {
+        const fallbackModel = "gemini-1.5-flash";
+        console.log(`[Chatbot] Trying fallback: ${fallbackModel}...`);
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: fallbackModel });
+        const chat = model.startChat({ history: fullHistory });
+        const result = await chat.sendMessage(message);
+        const text = result.response.text();
+        console.log(`[Chatbot] FALLBACK SUCCESS with ${fallbackModel}`);
+        return res.status(200).json({ success: true, text });
+    } catch (fallbackError) {
+        console.error("[Chatbot] ALL MODELS FAILED:", fallbackError.message);
+        return res.status(500).json({
+            success: false,
+            error: `Chatbot unavailable: ${fallbackError.message}`
+        });
     }
 };
