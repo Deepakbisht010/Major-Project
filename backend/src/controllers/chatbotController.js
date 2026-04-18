@@ -71,36 +71,34 @@ export const getBotResponse = async (req, res) => {
         ...history
     ];
 
-    // Try primary model
-    try {
-        console.log(`[Chatbot] Requesting ${modelName}...`);
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const chat = model.startChat({ history: fullHistory });
-        const result = await chat.sendMessage(message);
-        const text = result.response.text();
-        console.log(`[Chatbot] SUCCESS with ${modelName}`);
-        return res.status(200).json({ success: true, text });
-    } catch (primaryError) {
-        console.error(`[Chatbot] Primary (${modelName}) FAILED:`, primaryError.message);
+    // List of models to try in order
+    const modelsToTry = [modelName, "gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
+    // Remove duplicates and ensure fallbackModel is tried if not in list
+    const uniqueModels = [...new Set(modelsToTry)];
+
+    let lastError = null;
+
+    for (const modelId of uniqueModels) {
+        try {
+            console.log(`[Chatbot] Requesting ${modelId}...`);
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: modelId });
+            const chat = model.startChat({ history: fullHistory });
+            const result = await chat.sendMessage(message);
+            const text = result.response.text();
+            console.log(`[Chatbot] SUCCESS with ${modelId}`);
+            return res.status(200).json({ success: true, text });
+        } catch (err) {
+            console.error(`[Chatbot] Model ${modelId} FAILED:`, err.message);
+            lastError = err;
+            // If it's a 404, we continue to the next model
+            // If it's a 429 (Rate Limit) or other error, we might still want to try others
+        }
     }
 
-    // Try fallback model
-    try {
-        const fallbackModel = "gemini-1.5-flash";
-        console.log(`[Chatbot] Trying fallback: ${fallbackModel}...`);
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: fallbackModel });
-        const chat = model.startChat({ history: fullHistory });
-        const result = await chat.sendMessage(message);
-        const text = result.response.text();
-        console.log(`[Chatbot] FALLBACK SUCCESS with ${fallbackModel}`);
-        return res.status(200).json({ success: true, text });
-    } catch (fallbackError) {
-        console.error("[Chatbot] CRITICAL ERROR: All AI models failed.", fallbackError.message);
-        return res.status(500).json({
-            success: true, // We return success: true but with a friendly error message to avoid breaking UI
-            text: "I'm currently undergoing some maintenance. Please try again in 5 minutes or contact support at deepakbisht4050@gmail.com. (Error: " + fallbackError.message + ")"
-        });
-    }
+    console.error("[Chatbot] ALL MODELS FAILED:", lastError?.message);
+    return res.status(500).json({
+        success: true, // Returning success true with error text to keep UI functioning
+        text: "I'm having trouble accessing my AI models right now. Please verify your Gemini API key and model access in the Google AI Studio dashboard. (Error: " + lastError?.message + ")"
+    });
 };
