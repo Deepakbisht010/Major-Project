@@ -72,7 +72,7 @@ export const getBotResponse = async (req, res) => {
     ];
 
     // List of models to try in order
-    const modelsToTry = [modelName, "gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
+    const modelsToTry = [modelName, "gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
     // Remove duplicates and ensure fallbackModel is tried if not in list
     const uniqueModels = [...new Set(modelsToTry)];
 
