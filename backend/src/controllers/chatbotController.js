@@ -51,7 +51,12 @@ export const getBotResponse = async (req, res) => {
     console.log(`[Chatbot] Using model: ${modelName}, API Key starts with: ${apiKey?.substring(0, 8)}...`);
 
     if (!apiKey) {
+        console.error("[Chatbot] ERROR: GEMINI_API_KEY is missing from environment variables.");
         return res.status(500).json({ success: false, error: "Server configuration error: API key missing." });
+    }
+
+    if (apiKey.startsWith("AQ.")) {
+        console.warn("[Chatbot] WARNING: API Key starts with 'AQ.'. Most Google Gemini keys start with 'AIza'. please verify your key.");
     }
 
     // Gemini requirement: First message in history must be from 'user'
@@ -92,10 +97,10 @@ export const getBotResponse = async (req, res) => {
         console.log(`[Chatbot] FALLBACK SUCCESS with ${fallbackModel}`);
         return res.status(200).json({ success: true, text });
     } catch (fallbackError) {
-        console.error("[Chatbot] ALL MODELS FAILED:", fallbackError.message);
+        console.error("[Chatbot] CRITICAL ERROR: All AI models failed.", fallbackError.message);
         return res.status(500).json({
-            success: false,
-            error: `Chatbot unavailable: ${fallbackError.message}`
+            success: true, // We return success: true but with a friendly error message to avoid breaking UI
+            text: "I'm currently undergoing some maintenance. Please try again in 5 minutes or contact support at deepakbisht4050@gmail.com. (Error: " + fallbackError.message + ")"
         });
     }
 };
