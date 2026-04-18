@@ -71,34 +71,39 @@ export const getBotResponse = async (req, res) => {
         ...history
     ];
 
-    // List of models to try in order
-    const modelsToTry = [modelName, "gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
-    // Remove duplicates and ensure fallbackModel is tried if not in list
-    const uniqueModels = [...new Set(modelsToTry)];
+    // List of models and versions to try based on your account's availability
+    const modelsToTry = [
+        { name: "gemini-2.5-flash", version: "v1beta" },
+        { name: "gemini-2.5-pro", version: "v1beta" },
+        { name: "gemini-2.0-flash", version: "v1beta" },
+        { name: "gemini-1.5-flash", version: "v1beta" },
+        { name: "gemini-pro", version: "v1" }
+    ];
 
     let lastError = null;
 
-    for (const modelId of uniqueModels) {
+    for (const modelConfig of modelsToTry) {
         try {
-            console.log(`[Chatbot] Requesting ${modelId}...`);
+            console.log(`[Chatbot] Trying ${modelConfig.name} (${modelConfig.version})...`);
             const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: modelId });
+            const model = genAI.getGenerativeModel(
+                { model: modelConfig.name },
+                { apiVersion: modelConfig.version }
+            );
             const chat = model.startChat({ history: fullHistory });
             const result = await chat.sendMessage(message);
             const text = result.response.text();
-            console.log(`[Chatbot] SUCCESS with ${modelId}`);
+            console.log(`[Chatbot] SUCCESS with ${modelConfig.name}`);
             return res.status(200).json({ success: true, text });
         } catch (err) {
-            console.error(`[Chatbot] Model ${modelId} FAILED:`, err.message);
+            console.error(`[Chatbot] ${modelConfig.name} (${modelConfig.version}) FAILED:`, err.message);
             lastError = err;
-            // If it's a 404, we continue to the next model
-            // If it's a 429 (Rate Limit) or other error, we might still want to try others
         }
     }
 
     console.error("[Chatbot] ALL MODELS FAILED:", lastError?.message);
     return res.status(500).json({
-        success: true, // Returning success true with error text to keep UI functioning
-        text: "I'm having trouble accessing my AI models right now. Please verify your Gemini API key and model access in the Google AI Studio dashboard. (Error: " + lastError?.message + ")"
+        success: true,
+        text: "AI service temporarily unavailable. Please ensure your Google AI Studio API Key is active and has access to Gemini models. (Error: " + lastError?.message + ")"
     });
 };
