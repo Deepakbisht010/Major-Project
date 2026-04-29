@@ -1,4 +1,4 @@
-# 🏛️ E-TaxPay | Digital Tax Collection System 
+# 🏛️ E-TaxPay | Digital Tax Collection System
 
 **E-TaxPay** is a comprehensive, full-stack digital platform designed for the **Uttarakhand Zila Panchayat** to streamline shop tax collection, notice generation, and complaint management across 13 districts.
 
